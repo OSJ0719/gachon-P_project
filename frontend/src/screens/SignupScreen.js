@@ -1,3 +1,4 @@
+// src/screens/SignupScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
@@ -14,6 +15,7 @@ export default function SignupScreen({ navigation }) {
   const [authModal, setAuthModal] = useState({ isOpen: false, type: 'success', message: '', onConfirm: null });
 
   const handleSignup = async () => {
+    // 1) 입력값 검증
     if (!name || !username || !password) {
       setAuthModal({ isOpen: true, type: 'fail', message: '모든 정보를 입력해주세요.' });
       return;
@@ -23,18 +25,29 @@ export default function SignupScreen({ navigation }) {
       return;
     }
 
-    const result = await signupAPI({ username, password, name });
-    
-    if (result.success) {
-      setAuthModal({
-        isOpen: true, 
-        type: 'success', 
-        message: '회원가입이 완료되었습니다.\n로그인해주세요.',
-        onConfirm: () => {
-          setAuthModal(prev => ({ ...prev, isOpen: false }));
-          navigation.goBack(); 
-        }
-      });
+    try {
+      // 2) 회원가입 API 호출
+      const result = await signupAPI(username, password, name);
+
+      // 3) 성공/실패 분기
+      if (result.success) {
+        setAuthModal({
+          isOpen: true,
+          type: 'success',
+          message: '회원가입이 완료되었습니다.\n로그인해주세요.',
+          onConfirm: () => {
+            setAuthModal(prev => ({ ...prev, isOpen: false }));
+            navigation.goBack();
+          },
+        });
+      } else {
+        // 백엔드에서 내려준 에러 메시지 표시
+        const serverMessage = result.error?.message || '회원가입에 실패했습니다.';
+        setAuthModal({ isOpen: true, type: 'fail', message: serverMessage });
+      }
+    } catch (e) {
+      console.error('signup error:', e);
+      setAuthModal({ isOpen: true, type: 'fail', message: '네트워크 오류가 발생했습니다.' });
     }
   };
 
@@ -59,8 +72,8 @@ export default function SignupScreen({ navigation }) {
           <TextInput 
             style={COMMON_STYLES.input} 
             placeholder="아이디 입력" 
-            value={username}       
-            onChangeText={setUsername}
+            value={username} 
+            onChangeText={setUsername} 
             autoCapitalize="none" 
           />
 

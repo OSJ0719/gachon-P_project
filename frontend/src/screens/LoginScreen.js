@@ -15,17 +15,24 @@ export default function LoginScreen({ navigation }) {
   const [showFindAccount, setShowFindAccount] = useState(false);
 
   const handleLogin = async () => {
+    // 1. API 호출
     const result = await loginAPI(username, password);
 
+    // 2. 결과 처리
     if (result.success) {
-      setAuthModal({ isOpen: true, type: 'success', message: `${result.user.name}님 환영합니다!` });
+      // 성공 시 모달 띄우기 (데이터 경로 변경됨: result.data.username)
+      const welcomeName = result.data?.username || username;
+      setAuthModal({ isOpen: true, type: 'success', message: `${welcomeName}님 환영합니다!` });
       
       setTimeout(() => {
         setAuthModal(prev => ({ ...prev, isOpen: false }));
-        navigation.replace('Home', { user: result.user }); 
+        // 홈 화면으로 이동 (데이터 전달)
+        navigation.replace('Home', { user: welcomeName }); 
       }, 1500);
     } else {
-      setAuthModal({ isOpen: true, type: 'fail', message: result.message });
+      // 실패 시 에러 모달
+      const msg = result.error?.message || '아이디 또는 비밀번호를 확인해주세요.';
+      setAuthModal({ isOpen: true, type: 'fail', message: msg });
     }
   };
 
@@ -51,7 +58,7 @@ export default function LoginScreen({ navigation }) {
             style={COMMON_STYLES.input} 
             placeholder="아이디를 입력하세요" 
             placeholderTextColor={COLORS.textDim}
-            value={username}     
+            value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
           />
