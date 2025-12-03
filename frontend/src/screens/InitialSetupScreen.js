@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, ArrowRight, ArrowLeft, MapPin } from 'lucide-react-native';
 import { COLORS } from '../theme';
-import { updateUserProfileAPI } from '../api';
+import { updateUserProfileAPI } from '../api'; // API import
 
 export default function InitialSetupScreen({ navigation, route }) {
   const user = route.params?.user || {};
@@ -39,7 +39,7 @@ export default function InitialSetupScreen({ navigation, route }) {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      // 마지막 단계: 서버 전송
+      // 마지막 단계: 서버 전송 (실제 API 연동)
       try {
         const profileData = {
           categories,
@@ -47,14 +47,19 @@ export default function InitialSetupScreen({ navigation, route }) {
           welfareInfo
         };
         
+        // API 호출
         const res = await updateUserProfileAPI(profileData);
         
-        // 성공 여부와 관계없이 홈으로 이동 (사용자 편의)
-        // 실제로는 res.success 체크 필요
-        navigation.replace('Home', { user });
+        if (res.success) {
+          // 성공 시 홈으로 이동
+          navigation.replace('Home', { user });
+        } else {
+          // 실패 시 에러 메시지
+          Alert.alert('오류', res.message || '설정 저장에 실패했습니다.');
+        }
       } catch (e) {
         console.error('설정 저장 실패:', e);
-        navigation.replace('Home', { user });
+        Alert.alert('오류', '네트워크 오류가 발생했습니다.');
       }
     }
   };
@@ -63,7 +68,7 @@ export default function InitialSetupScreen({ navigation, route }) {
     if (step > 1) setStep(step - 1);
   };
 
-  // --- 단계별 화면 렌더링 ---
+  // --- 단계별 화면 렌더링 (UI 코드는 기존과 동일) ---
   
   // Step 1: 관심사 선택
   const renderStep1 = () => (
@@ -215,7 +220,7 @@ export default function InitialSetupScreen({ navigation, route }) {
             <Text style={styles.prevBtnText}>이전</Text>
           </TouchableOpacity>
         ) : (
-          <View style={{ flex: 1 }} /> // 공간 채우기용
+          <View style={{ flex: 1 }} /> 
         )}
         
         <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>

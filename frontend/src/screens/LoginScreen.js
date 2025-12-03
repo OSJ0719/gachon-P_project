@@ -1,6 +1,7 @@
 // src/screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bot } from 'lucide-react-native';
 import { COLORS, COMMON_STYLES } from '../theme';
 import { loginAPI } from '../api';

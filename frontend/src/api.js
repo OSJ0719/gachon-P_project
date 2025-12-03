@@ -70,11 +70,32 @@ export const logoutAPI = async () => {
   });
 };
 
+// 내 정보 조회
+export const getUserProfileAPI = async () => {
+  return request('/api/v1/users/me', { method: 'GET' });
+};
+
+// 내 정보 수정 (초기 설정 포함)
+export const updateUserProfileAPI = async (data) => {
+  return request('/api/v1/users/me/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+};
+
 // 아이디 찾기 (추후 구현 시 사용)
 export const findIdAPI = async (name, phone) => {
   return request('/api/v1/auth/find-id', {
     method: 'POST',
     body: JSON.stringify({ name, phone }),
+  });
+};
+
+// 비밀번호 재설정 (임시 비번 발송 등)
+export const resetPasswordAPI = async (name, phone, username) => {
+  return request('/api/v1/auth/reset-pw', {
+    method: 'POST',
+    body: JSON.stringify({ name, phone, username }),
   });
 };
 
@@ -93,6 +114,14 @@ export const getSchedulesAPI = async (date) => {
   return request(`/api/v1/calendar/events?date=${date}`, { method: 'GET' });
 };
 
+// 일정 추가
+export const createScheduleAPI = async (date, time, title) => {
+  return request('/api/v1/calendar/events', {
+    method: 'POST',
+    body: JSON.stringify({ date, time, title })
+  });
+};
+
 // 북마크 목록 조회
 export const getBookmarksAPI = async () => {
   return request('/api/v1/bookmarks', { method: 'GET' });
@@ -100,18 +129,24 @@ export const getBookmarksAPI = async () => {
 
 // 추천 복지 목록 조회
 export const getRecommendationsAPI = async () => {
-  // /api/v1/policies/recommendations 로 가정
-  return request('/api/v1/policies/recommendations', { method: 'GET' }); 
+  return request('/api/v1/recommendations', { method: 'GET' }); 
 };
 
-// 사용자 초기 설정 저장 (관심사, 지역, 복지 정보)
-export const updateUserProfileAPI = async (profileData) => {
-  // profileData 구조: { categories, region, welfareInfo }
-  // region 예시: { city: '서울', district: '강남구', dong: '역삼동' }
-  // welfareInfo 예시: { disability: true, incomeLevel: 'basic_livelihood' }
-  
-  return request('/api/v1/users/me/profile', {
-    method: 'PUT',
-    body: JSON.stringify(profileData),
-  });
+// =================================================================
+// 3. 검색 및 상세 조회 API
+// =================================================================
+
+// 정책 검색 (키워드)
+export const getPoliciesAPI = async (keyword) => {
+  return request(`/api/v1/policies?q=${keyword}`, { method: 'GET' });
+};
+
+// 정책 상세 정보 조회
+export const getPolicyDetailAPI = async (policyId) => {
+  return request(`/api/v1/policies/${policyId}`, { method: 'GET' });
+};
+
+// 정책 AI 분석 결과 조회 (신청 도우미용)
+export const getPolicyAIResultAPI = async (policyId) => {
+  return request(`/api/v1/policies/${policyId}/ai-result`, { method: 'GET' });
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Bookmark } from 'lucide-react-native';
+import { ArrowLeft, Bookmark, ChevronRight } from 'lucide-react-native';
 import { COLORS } from '../theme';
 import { getBookmarksAPI } from '../api';
 
@@ -38,7 +38,11 @@ export default function BookmarkScreen({ navigation }) {
           </View>
         ) : (
           bookmarks.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.card}>
+            <TouchableOpacity 
+              key={item.id} 
+              style={styles.card}
+              onPress={() => navigation.navigate('PolicyDetail', { policyId: item.id })}
+            >
               <View style={styles.cardHeader}>
                 <View style={styles.badge}><Text style={styles.badgeText}>{item.category}</Text></View>
                 <Bookmark size={24} color={COLORS.primary} fill={COLORS.primary} />

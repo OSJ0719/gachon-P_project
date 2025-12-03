@@ -42,7 +42,11 @@ export default function RecommendationScreen({ navigation }) {
           </View>
         ) : (
           list.map((item, index) => (
-            <TouchableOpacity key={item.id || index} style={styles.card}>
+            <TouchableOpacity 
+              key={item.id || index} 
+              style={styles.card}
+              onPress={() => navigation.navigate('PolicyDetail', { policyId: item.id })}
+            >
               <View style={styles.cardHeader}>
                 <View style={styles.rankBadge}><Text style={styles.rankText}>{index + 1}</Text></View>
                 <Text style={styles.category}>{item.category}</Text>

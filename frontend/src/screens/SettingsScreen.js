@@ -3,9 +3,11 @@ import { View, Text, TouchableOpacity, Switch, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Bell } from 'lucide-react-native';
 import { COLORS } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SettingsScreen({ navigation }) {
   const [alarm, setAlarm] = useState(true);
+  const { fontSizeMode, setFontSizeMode } = useTheme();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,9 +37,21 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>글자 크기</Text>
           <View style={styles.sizeOptions}>
-            <TouchableOpacity style={styles.sizeBtn}><Text style={{fontSize: 14}}>작게</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.sizeBtn, styles.activeBtn]}><Text style={{fontSize: 18, fontWeight: 'bold', color: COLORS.primary}}>보통</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.sizeBtn}><Text style={{fontSize: 22}}>크게</Text></TouchableOpacity>
+            {['small', 'medium', 'large'].map((mode, idx) => (
+              <TouchableOpacity 
+                key={mode}
+                style={[styles.sizeBtn, fontSizeMode === mode && styles.activeBtn]}
+                onPress={() => setFontSizeMode(mode)}
+              >
+                <Text style={{
+                  fontSize: mode === 'small' ? 14 : mode === 'medium' ? 18 : 22,
+                  fontWeight: fontSizeMode === mode ? 'bold' : 'normal',
+                  color: fontSizeMode === mode ? COLORS.primary : '#4b5563'
+                }}>
+                  {mode === 'small' ? '작게' : mode === 'medium' ? '보통' : '크게'}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
@@ -58,7 +72,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 10 },
   card: { backgroundColor: 'white', padding: 20, borderRadius: 20, marginBottom: 16 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { fontSize: 20, fontWeight: 'bold', marginLeft: 12, color: '#111827' },
+  label: { fontSize: 18, fontWeight: 'bold', marginLeft: 12, color: '#111827' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#111827' },
   sizeOptions: { flexDirection: 'row', gap: 10 },
   sizeBtn: { flex: 1, alignItems: 'center', padding: 12, borderRadius: 12, backgroundColor: '#f3f4f6' },

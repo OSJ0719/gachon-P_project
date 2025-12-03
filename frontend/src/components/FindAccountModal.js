@@ -1,28 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { X, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { COLORS, COMMON_STYLES } from '../theme';
+import { findIdAPI, resetPasswordAPI } from '../api';
 
 export default function FindAccountModal({ isOpen, onClose }) {
-  const [tab, setTab] = useState('username'); 
+  const [tab, setTab] = useState('username'); // 'username' | 'pw'
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [result, setResult] = useState(null);
+  const [usernameInput, setUsernameInput] = useState(''); // 비번 찾기용 아이디 입력
+  
+  const [result, setResult] = useState(null); // 결과 메시지 상태
+  const [loading, setLoading] = useState(false);
 
+  // 모달 열릴 때 초기화
   useEffect(() => {
-    if (isOpen) { setTab('username'); setResult(null); setName(''); setPhone(''); }
+    if (isOpen) {
+      setTab('username'); 
+      setResult(null); 
+      setName(''); 
+      setPhone(''); 
+      setUsernameInput('');
+      setLoading(false);
+    }
   }, [isOpen]);
 
-  const handleFind = () => {
+  const handleFind = async () => {
     if (!name || !phone) {
       setResult({ type: 'fail', msg: '이름과 전화번호를 입력해주세요.' });
       return;
     }
-    // Mock Logic
-    if (tab === 'username') {
-      setResult({ type: 'success', msg: `회원님의 아이디는\n[ kim123 ] 입니다.` });
-    } else {
-      setResult({ type: 'success', msg: `임시 비밀번호를\n문자로 발송했습니다.` });
+    if (tab === 'pw' && !usernameInput) {
+      setResult({ type: 'fail', msg: '아이디를 입력해주세요.' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let res;
+      if (tab === 'username') {
+        // 1. 아이디 찾기 API 호출
+        res = await findIdAPI(name, phone);
+        if (res.success) {
+          setResult({ type: 'success', msg: `회원님의 아이디는\n[ ${res.data.username} ] 입니다.` });
+        } else {
+          setResult({ type: 'fail', msg: res.message || '일치하는 회원 정보가 없습니다.' });
+        }
+      } else {
+        // 2. 비밀번호 재설정 API 호출
+        res = await resetPasswordAPI(name, phone, usernameInput);
+        if (res.success) {
+          setResult({ type: 'success', msg: `등록된 번호로\n임시 비밀번호를 발송했습니다.` });
+        } else {
+          setResult({ type: 'fail', msg: res.message || '정보를 확인할 수 없습니다.' });
+        }
+      }
+    } catch (e) {
+      setResult({ type: 'fail', msg: '네트워크 오류가 발생했습니다.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,12 +91,48 @@ export default function FindAccountModal({ isOpen, onClose }) {
           {!result ? (
             <View>
               <Text style={COMMON_STYLES.label}>이름</Text>
-              <TextInput style={COMMON_STYLES.input} placeholder="홍길동" value={name} onChangeText={setName} />
-              <Text style={COMMON_STYLES.label}>전화번호</Text>
-              <TextInput style={COMMON_STYLES.input} placeholder="010-0000-0000" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
+              <TextInput 
+                style={COMMON_STYLES.input} 
+                placeholder="홍길동" 
+                value={name} 
+                onChangeText={setName} 
+              />
               
-              <TouchableOpacity style={COMMON_STYLES.buttonPrimary} onPress={handleFind}>
-                <Text style={COMMON_STYLES.buttonText}>{tab === 'username' ? '아이디 찾기' : '비밀번호 재설정'}</Text>
+              <Text style={COMMON_STYLES.label}>전화번호</Text>
+              <TextInput 
+                style={COMMON_STYLES.input} 
+                placeholder="010-0000-0000" 
+                keyboardType="phone-pad" 
+                value={phone} 
+                onChangeText={setPhone} 
+              />
+
+              {/* 비밀번호 찾기일 때만 아이디 입력칸 표시 */}
+              {tab === 'pw' && (
+                <>
+                  <Text style={COMMON_STYLES.label}>아이디</Text>
+                  <TextInput 
+                    style={COMMON_STYLES.input} 
+                    placeholder="아이디 입력" 
+                    value={usernameInput} 
+                    onChangeText={setUsernameInput} 
+                    autoCapitalize="none"
+                  />
+                </>
+              )}
+              
+              <TouchableOpacity 
+                style={[COMMON_STYLES.buttonPrimary, loading && { opacity: 0.7 }]} 
+                onPress={handleFind}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={COMMON_STYLES.buttonText}>
+                    {tab === 'username' ? '아이디 찾기' : '비밀번호 재설정'}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           ) : (
