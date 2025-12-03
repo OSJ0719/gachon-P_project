@@ -20,7 +20,7 @@ export default function FindAccountModal({ isOpen, onClose }) {
     }
     // Mock Logic
     if (tab === 'username') {
-      setResult({ type: 'success', msg: `회원님의 아이디는\n[ park123 ] 입니다.` });
+      setResult({ type: 'success', msg: `회원님의 아이디는\n[ kim123 ] 입니다.` });
     } else {
       setResult({ type: 'success', msg: `임시 비밀번호를\n문자로 발송했습니다.` });
     }

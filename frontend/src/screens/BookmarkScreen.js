@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Bookmark } from 'lucide-react-native';
 import { COLORS } from '../theme';
 import { getBookmarksAPI } from '../api';
@@ -9,8 +10,14 @@ export default function BookmarkScreen({ navigation }) {
 
   useEffect(() => {
     async function loadData() {
-      const res = await getBookmarksAPI();
-      if (res.success) setBookmarks(res.data);
+      try {
+        const res = await getBookmarksAPI();
+        if (res.success && Array.isArray(res.data)) {
+          setBookmarks(res.data);
+        }
+      } catch (e) {
+        console.error('북마크 로드 실패:', e);
+      }
     }
     loadData();
   }, []);
@@ -25,16 +32,22 @@ export default function BookmarkScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        {bookmarks.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={styles.badge}><Text style={styles.badgeText}>{item.category}</Text></View>
-              <Bookmark size={24} color={COLORS.primary} fill={COLORS.primary} />
-            </View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.date}>저장일: {item.date}</Text>
-          </TouchableOpacity>
-        ))}
+        {bookmarks.length === 0 ? (
+          <View style={{ alignItems: 'center', marginTop: 50 }}>
+            <Text style={{ fontSize: 16, color: COLORS.textDim }}>저장된 북마크가 없습니다.</Text>
+          </View>
+        ) : (
+          bookmarks.map((item) => (
+            <TouchableOpacity key={item.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.badge}><Text style={styles.badgeText}>{item.category}</Text></View>
+                <Bookmark size={24} color={COLORS.primary} fill={COLORS.primary} />
+              </View>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.date}>저장일: {item.date}</Text>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );

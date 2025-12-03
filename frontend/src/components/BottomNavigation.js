@@ -1,4 +1,3 @@
-// src/components/BottomNavigation.js
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Home, Calendar, Bot } from 'lucide-react-native';
@@ -53,7 +52,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    elevation: 20, // 그림자
+    elevation: 20,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -69,8 +68,8 @@ const styles = StyleSheet.create({
     width: 64, height: 64, borderRadius: 32,
     backgroundColor: COLORS.primary,
     alignItems: 'center', justifyContent: 'center',
-    top: -25, // 위로 튀어나오게
-    borderWidth: 4, borderColor: '#f3f4f6', // 배경색과 같은 테두리로 구멍 뚫린 느낌
+    top: -25,
+    borderWidth: 4, borderColor: '#f3f4f6',
     elevation: 5,
   },
 });

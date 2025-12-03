@@ -1,13 +1,40 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
 import { COLORS } from '../theme';
+import { getSchedulesAPI } from '../api';
 
 export default function CalendarScreen({ navigation }) {
-  // 간단한 달력 UI (그리드)
+  const [selectedDate, setSelectedDate] = useState(new Date().getDate()); // 기본값: 오늘 날짜(일)
+  const [schedules, setSchedules] = useState([]);
+  
   const days = ['일', '월', '화', '수', '목', '금', '토'];
-  // 예시 데이터 (1일~30일)
-  const dates = Array.from({ length: 30 }, (_, i) => i + 1);
+  const dates = Array.from({ length: 30 }, (_, i) => i + 1); // 1~30일 (예시)
+
+  // 날짜 선택 시 API 호출
+  const fetchSchedule = async (day) => {
+    setSelectedDate(day);
+    try {
+      // 실제로는 '2025-12-05' 형태로 변환해서 보내야 합니다.
+      const dateStr = `2025-12-${String(day).padStart(2, '0')}`;
+      const res = await getSchedulesAPI(dateStr);
+      
+      if (res.success && Array.isArray(res.data)) {
+        setSchedules(res.data);
+      } else {
+        setSchedules([]);
+      }
+    } catch (e) {
+      console.error('일정 로드 실패:', e);
+      setSchedules([]);
+    }
+  };
+
+  // 처음 진입 시 오늘 날짜 일정 로드
+  useEffect(() => {
+    fetchSchedule(selectedDate);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -31,22 +58,35 @@ export default function CalendarScreen({ navigation }) {
             <Text key={i} style={[styles.dayLabel, i === 0 && { color: '#ef4444' }]}>{d}</Text>
           ))}
           {dates.map((date, i) => (
-            <TouchableOpacity key={i} style={styles.dateBox}>
-              <Text style={styles.dateText}>{date}</Text>
-              {/* 예시: 5일과 12일에 일정 점 표시 */}
-              {(date === 5 || date === 12) && <View style={styles.dot} />}
+            <TouchableOpacity 
+              key={i} 
+              style={[styles.dateBox, selectedDate === date && styles.selectedDateBox]}
+              onPress={() => fetchSchedule(date)}
+            >
+              <Text style={[styles.dateText, selectedDate === date && { color: 'white' }]}>{date}</Text>
+              {/* API 연동 시 점 표시는 월별 데이터가 필요하므로 일단 UI만 유지 */}
             </TouchableOpacity>
           ))}
         </View>
       </View>
       
-      <View style={styles.scheduleList}>
-        <Text style={styles.listTitle}>12월 5일 일정</Text>
-        <View style={styles.scheduleItem}>
-           <Text style={styles.time}>14:00</Text>
-           <Text style={styles.desc}>병원 진료</Text>
-        </View>
-      </View>
+      <ScrollView style={styles.scheduleList}>
+        <Text style={styles.listTitle}>12월 {selectedDate}일 일정</Text>
+        
+        {schedules.length === 0 ? (
+          <Text style={{ color: COLORS.textDim, fontSize: 16 }}>등록된 일정이 없습니다.</Text>
+        ) : (
+          schedules.map((item, idx) => (
+            <View key={idx} style={styles.scheduleItem}>
+              <Text style={styles.time}>{item.time}</Text>
+              <View>
+                <Text style={styles.desc}>{item.title}</Text>
+                {item.location && <Text style={{fontSize:14, color:COLORS.textDim}}>{item.location}</Text>}
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -61,12 +101,12 @@ const styles = StyleSheet.create({
   monthText: { fontSize: 20, fontWeight: 'bold' },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   dayLabel: { width: '14.28%', textAlign: 'center', marginBottom: 10, fontWeight: 'bold', color: '#6b7280' },
-  dateBox: { width: '14.28%', height: 50, alignItems: 'center', justifyContent: 'flex-start' },
+  dateBox: { width: '14.28%', height: 45, alignItems: 'center', justifyContent: 'center', borderRadius: 22 },
+  selectedDateBox: { backgroundColor: COLORS.primary },
   dateText: { fontSize: 18, fontWeight: '500' },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary, marginTop: 4 },
-  scheduleList: { padding: 20 },
-  listTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  scheduleItem: { flexDirection: 'row', backgroundColor: 'white', padding: 16, borderRadius: 12, alignItems: 'center' },
-  time: { fontSize: 18, fontWeight: 'bold', color: COLORS.primary, marginRight: 16 },
+  scheduleList: { padding: 20, flex: 1 },
+  listTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
+  scheduleItem: { flexDirection: 'row', backgroundColor: 'white', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 10 },
+  time: { fontSize: 18, fontWeight: 'bold', color: COLORS.primary, marginRight: 16, width: 60 },
   desc: { fontSize: 18, fontWeight: '500' },
 });

@@ -1,4 +1,3 @@
-// src/components/SideMenu.js
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { X, User, Bookmark, Calendar, Sparkles, Settings, LogOut } from 'lucide-react-native';
@@ -16,28 +15,29 @@ export default function SideMenu({ isOpen, onClose, navigation, userName }) {
   ];
 
   const handleLogout = async () => {
-    await logoutAPI(); // 서버에 로그아웃 요청
-    onClose();
-    // 로그인 화면으로 초기화
-    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    try {
+      await logoutAPI(); // 1. 서버에 로그아웃 요청
+    } catch (e) {
+      console.error('로그아웃 에러:', e);
+    } finally {
+      onClose();
+      // 2. 로그인 화면으로 강제 이동 (스택 초기화)
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    }
   };
 
-// src/components/SideMenu.js 안에 handleNavigate 수정
-
-const handleNavigate = (pageName) => {
-  onClose();
-  navigation.navigate(pageName); // 이제 진짜 이동!
-};
+  const handleNavigate = (pageName) => {
+    onClose();
+    navigation.navigate(pageName);
+  };
 
   return (
     <Modal visible={isOpen} transparent animationType="fade">
       <View style={styles.overlay}>
-        {/* 배경 클릭 시 닫기 */}
         <TouchableWithoutFeedback onPress={onClose}>
           <View style={styles.background} />
         </TouchableWithoutFeedback>
 
-        {/* 메뉴 본문 (왼쪽에서 등장) */}
         <View style={styles.menuContainer}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>메뉴</Text>
@@ -46,7 +46,6 @@ const handleNavigate = (pageName) => {
             </TouchableOpacity>
           </View>
 
-          {/* 사용자 정보 영역 */}
           <View style={styles.userInfo}>
             <View style={styles.avatar}>
               <User size={32} color="white" />
@@ -57,7 +56,6 @@ const handleNavigate = (pageName) => {
             </View>
           </View>
 
-          {/* 메뉴 리스트 */}
           <View style={{ flex: 1 }}>
             {menuItems.map((item, index) => (
               <TouchableOpacity 
@@ -73,7 +71,6 @@ const handleNavigate = (pageName) => {
             ))}
           </View>
 
-          {/* 하단 로그아웃 */}
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <View style={[styles.iconBox, { backgroundColor: '#fee2e2' }]}>
               <LogOut size={24} color={COLORS.error} />

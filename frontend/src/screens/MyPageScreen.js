@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, User, Phone, MapPin, Lock } from 'lucide-react-native';
 import { COLORS } from '../theme';
 
 export default function MyPageScreen({ navigation, route }) {
-  // 로그인 때 받은 정보가 없다면 기본값 사용
-  const user = route.params?.user || { name: '박성민', username: 'park123', region: '서울' };
+  // 로그인 화면에서 전달받은 user 정보 사용 (없을 경우 기본값 표시)
+  const user = route.params?.user || { name: '사용자', username: '-', region: '-' };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -21,8 +22,8 @@ export default function MyPageScreen({ navigation, route }) {
           <View style={styles.avatar}>
             <User size={40} color="white" />
           </View>
-          <Text style={styles.name}>{user.name}님</Text>
-          <Text style={styles.id}>아이디: {user.username || 'park123'}</Text>
+          <Text style={styles.name}>{user.name || '이름 없음'}님</Text>
+          <Text style={styles.id}>아이디: {user.username || user}</Text>
         </View>
 
         <View style={styles.section}>
@@ -34,7 +35,7 @@ export default function MyPageScreen({ navigation, route }) {
           </View>
           <View style={styles.row}>
             <MapPin size={20} color={COLORS.textDim} />
-            <Text style={styles.value}>{user.region}</Text>
+            <Text style={styles.value}>{user.region || '지역 미설정'}</Text>
             <TouchableOpacity style={styles.editBtn}><Text style={styles.editBtnText}>변경</Text></TouchableOpacity>
           </View>
         </View>

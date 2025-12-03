@@ -1,6 +1,6 @@
-// src/screens/SignupScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { ArrowLeft } from 'lucide-react-native';
 import { COLORS, COMMON_STYLES } from '../theme';
 import { signupAPI } from '../api';
@@ -15,7 +15,6 @@ export default function SignupScreen({ navigation }) {
   const [authModal, setAuthModal] = useState({ isOpen: false, type: 'success', message: '', onConfirm: null });
 
   const handleSignup = async () => {
-    // 1) 입력값 검증
     if (!name || !username || !password) {
       setAuthModal({ isOpen: true, type: 'fail', message: '모든 정보를 입력해주세요.' });
       return;
@@ -26,22 +25,19 @@ export default function SignupScreen({ navigation }) {
     }
 
     try {
-      // 2) 회원가입 API 호출
-      const result = await signupAPI(username, password, name);
-
-      // 3) 성공/실패 분기
+      const result = await signupAPI({ username, password, name });
       if (result.success) {
         setAuthModal({
           isOpen: true,
           type: 'success',
-          message: '회원가입이 완료되었습니다.\n로그인해주세요.',
+          message: '회원가입이 완료되었습니다.\n맞춤 설정을 시작합니다.',
           onConfirm: () => {
             setAuthModal(prev => ({ ...prev, isOpen: false }));
-            navigation.goBack();
+            
+            navigation.replace('InitialSetup', { user: { username, name } }); 
           },
         });
-      } else {
-        // 백엔드에서 내려준 에러 메시지 표시
+      }else {
         const serverMessage = result.error?.message || '회원가입에 실패했습니다.';
         setAuthModal({ isOpen: true, type: 'fail', message: serverMessage });
       }
@@ -67,19 +63,10 @@ export default function SignupScreen({ navigation }) {
         <View style={{ gap: 8 }}>
           <Text style={COMMON_STYLES.label}>이름</Text>
           <TextInput style={COMMON_STYLES.input} placeholder="홍길동" value={name} onChangeText={setName} />
-
           <Text style={COMMON_STYLES.label}>아이디</Text>
-          <TextInput 
-            style={COMMON_STYLES.input} 
-            placeholder="아이디 입력" 
-            value={username} 
-            onChangeText={setUsername} 
-            autoCapitalize="none" 
-          />
-
+          <TextInput style={COMMON_STYLES.input} placeholder="아이디 입력" value={username} onChangeText={setUsername} autoCapitalize="none" />
           <Text style={COMMON_STYLES.label}>비밀번호</Text>
           <TextInput style={COMMON_STYLES.input} placeholder="비밀번호 입력" secureTextEntry value={password} onChangeText={setPassword} />
-
           <Text style={COMMON_STYLES.label}>비밀번호 확인</Text>
           <TextInput style={COMMON_STYLES.input} placeholder="비밀번호 재입력" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
         </View>
@@ -90,13 +77,7 @@ export default function SignupScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      <AuthModal 
-        isOpen={authModal.isOpen} 
-        type={authModal.type} 
-        message={authModal.message} 
-        onConfirm={authModal.onConfirm || (() => setAuthModal(prev => ({ ...prev, isOpen: false })))} 
-      />
+      <AuthModal isOpen={authModal.isOpen} type={authModal.type} message={authModal.message} onConfirm={authModal.onConfirm || (() => setAuthModal(prev => ({ ...prev, isOpen: false })))} />
     </SafeAreaView>
   );
 }

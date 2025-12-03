@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Sparkles, ChevronRight } from 'lucide-react-native';
 import { COLORS } from '../theme';
 import { getRecommendationsAPI } from '../api';
@@ -9,8 +10,14 @@ export default function RecommendationScreen({ navigation }) {
 
   useEffect(() => {
     async function load() {
-      const res = await getRecommendationsAPI();
-      if (res.success) setList(res.data);
+      try {
+        const res = await getRecommendationsAPI();
+        if (res.success && Array.isArray(res.data)) {
+          setList(res.data);
+        }
+      } catch (e) {
+        console.error('추천 로드 실패:', e);
+      }
     }
     load();
   }, []);
@@ -29,23 +36,29 @@ export default function RecommendationScreen({ navigation }) {
           <Text style={styles.bannerText}>💡 어르신께 딱 맞는 혜택을 찾아봤어요!</Text>
         </View>
 
-        {list.map((item, index) => (
-          <TouchableOpacity key={item.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={styles.rankBadge}><Text style={styles.rankText}>{index + 1}</Text></View>
-              <Text style={styles.category}>{item.category}</Text>
-            </View>
-            <Text style={styles.title}>{item.title}</Text>
-            <View style={styles.reasonBox}>
-              <Sparkles size={16} color={COLORS.primary} />
-              <Text style={styles.reasonText}>{item.reason}</Text>
-            </View>
-            <View style={styles.footer}>
-              <Text style={styles.detailBtn}>자세히 보기</Text>
-              <ChevronRight size={20} color={COLORS.textDim} />
-            </View>
-          </TouchableOpacity>
-        ))}
+        {list.length === 0 ? (
+          <View style={{ alignItems: 'center', marginTop: 50 }}>
+            <Text style={{ fontSize: 16, color: COLORS.textDim }}>현재 추천 항목이 없습니다.</Text>
+          </View>
+        ) : (
+          list.map((item, index) => (
+            <TouchableOpacity key={item.id || index} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.rankBadge}><Text style={styles.rankText}>{index + 1}</Text></View>
+                <Text style={styles.category}>{item.category}</Text>
+              </View>
+              <Text style={styles.title}>{item.title}</Text>
+              <View style={styles.reasonBox}>
+                <Sparkles size={16} color={COLORS.primary} />
+                <Text style={styles.reasonText}>{item.reason}</Text>
+              </View>
+              <View style={styles.footer}>
+                <Text style={styles.detailBtn}>자세히 보기</Text>
+                <ChevronRight size={20} color={COLORS.textDim} />
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );

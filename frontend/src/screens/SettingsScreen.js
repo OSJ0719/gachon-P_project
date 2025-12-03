@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Switch, StyleSheet } from 'react-native';
-import { ArrowLeft, Bell, Type } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, Switch, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Bell } from 'lucide-react-native';
 import { COLORS } from '../theme';
 
 export default function SettingsScreen({ navigation }) {
