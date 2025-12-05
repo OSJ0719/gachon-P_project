@@ -18,14 +18,16 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     // 1. API 호출
     const result = await loginAPI(username, password);
-
+    
     // 2. 결과 처리
     if (result.success) {
-      if (result.data.token) {
-        await AsyncStorage.setItem('userToken', result.data.token);
+      if (result.data.accessToken) {
+        await AsyncStorage.setItem('userToken', result.data.accessToken);
       }
-      // 성공 시 모달 띄우기 (데이터 경로 변경됨: result.data.username)
-      const welcomeName = result.data?.username || username;
+
+      // 성공 시 모달 띄우기
+      const welcomeName = username; 
+      
       setAuthModal({ isOpen: true, type: 'success', message: `${welcomeName}님 환영합니다!` });
       
       setTimeout(() => {

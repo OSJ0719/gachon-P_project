@@ -15,7 +15,7 @@ const request = async (endpoint, options = {}) => {
 
     const headers = {
       'Content-Type': 'application/json',
-      ...options.headers, // 개별 요청에서 보낸 헤더가 있다면 병합
+      ...options.headers,
     };
 
     if (token) {
@@ -27,11 +27,9 @@ const request = async (endpoint, options = {}) => {
       headers,
     });
 
-    // 응답 바디가 비어있거나 JSON이 아닐 경우를 대비한 안전한 파싱
     const text = await response.text();
     const data = text ? JSON.parse(text) : {};
 
-    // 상태 코드가 200~299가 아니면 실패로 간주
     if (!response.ok) {
       console.warn(`⚠️ [API 에러] ${response.status}:`, data);
       return { 
@@ -42,7 +40,6 @@ const request = async (endpoint, options = {}) => {
       };
     }
 
-    // 성공
     return { success: true, data };
   } catch (error) {
     console.error(`🚨 [네트워크 에러] ${endpoint}:`, error);
@@ -64,7 +61,7 @@ export const loginAPI = async (username, password) => {
 
 // 회원가입
 export const signupAPI = async (userData) => {
-  // userData 구조: { username, password, name }
+  // userData: { username, password, name }
   return request('/api/v1/auth/signup', {
     method: 'POST',
     body: JSON.stringify(userData),
@@ -78,20 +75,15 @@ export const logoutAPI = async () => {
   });
 };
 
-// 내 정보 조회
-export const getUserProfileAPI = async () => {
-  return request('/api/v1/users/me', { method: 'GET' });
-};
-
-// 내 정보 수정 (초기 설정 포함)
-export const updateUserProfileAPI = async (data) => {
-  return request('/api/v1/users/me/profile', {
-    method: 'PUT',
-    body: JSON.stringify(data),
+// 비밀번호 변경
+export const changePasswordAPI = async (currentPassword, newPassword) => {
+  return request('/api/v1/auth/password/change', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
   });
 };
 
-// 아이디 찾기 (추후 구현 시 사용)
+// 아이디 찾기
 export const findIdAPI = async (name, phone) => {
   return request('/api/v1/auth/find-id', {
     method: 'POST',
@@ -99,7 +91,7 @@ export const findIdAPI = async (name, phone) => {
   });
 };
 
-// 비밀번호 재설정 (임시 비번 발송 등)
+// 비밀번호 재설정
 export const resetPasswordAPI = async (name, phone, username) => {
   return request('/api/v1/auth/reset-pw', {
     method: 'POST',
@@ -108,17 +100,78 @@ export const resetPasswordAPI = async (name, phone, username) => {
 };
 
 // =================================================================
-// 2. 홈 화면 및 기능 데이터 API
+// 2. 사용자 (User) 및 설정 API
 // =================================================================
 
-// 메인 화면 요약 정보 (날씨, AI 멘트 등)
+// 내 정보 조회
+export const getUserProfileAPI = async () => {
+  return request('/api/v1/users/me', { method: 'GET' });
+};
+
+// 알림 설정 조회
+export const getSettingsAPI = async () => {
+  return request('/api/v1/users/settings', { method: 'GET' });
+};
+
+// 알림 설정 수정
+export const updateSettingsAPI = async (settingsData) => {
+  return request('/api/v1/users/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settingsData),
+  });
+};
+
+// 관심 카테고리 설정
+export const setInterestCategoriesAPI = async (categoryCodes) => {
+  return request('/api/v1/onboarding/interests', {
+    method: 'POST',
+    body: JSON.stringify({ categoryCodes }),
+  });
+};
+
+// 내 정보 통합 수정
+export const updateUserProfileAPI = async (data) => {
+  return request('/api/v1/users/me/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+};
+
+// =================================================================
+// 3. 홈 화면 및 정책(Policy) API
+// =================================================================
+
+// 홈 화면 요약 정보 (날씨, 일정, 추천 정책)
 export const getHomeSummaryAPI = async () => {
   return request('/api/v1/home/summary', { method: 'GET' });
 };
 
+// 사용자 기반 추천 정책 조회 (Updated)
+export const getRecommendationsAPI = async () => {
+  return request('/api/v1/policies/recommended', { method: 'GET' }); 
+};
+
+// 정책 검색 (키워드)
+export const getPoliciesAPI = async (keyword) => {
+  return request(`/api/v1/policies/search?keyword=${encodeURIComponent(keyword)}`, { method: 'GET' });
+};
+
+// 정책 상세 조회
+export const getPolicyDetailAPI = async (policyId) => {
+  return request(`/api/v1/policies/${policyId}`, { method: 'GET' });
+};
+
+// 정책 AI 분석 결과 조회
+export const getPolicyAIResultAPI = async (policyId) => {
+  return request(`/api/v1/policies/${policyId}/ai-result`, { method: 'GET' });
+};
+
+// =================================================================
+// 4. 캘린더 및 북마크 API
+// =================================================================
+
 // 일정 목록 조회
 export const getSchedulesAPI = async (date) => {
-  // 예: /api/v1/calendar/events?date=2025-12-05
   return request(`/api/v1/calendar/events?date=${date}`, { method: 'GET' });
 };
 
@@ -133,28 +186,4 @@ export const createScheduleAPI = async (date, time, title) => {
 // 북마크 목록 조회
 export const getBookmarksAPI = async () => {
   return request('/api/v1/bookmarks', { method: 'GET' });
-};
-
-// 추천 복지 목록 조회
-export const getRecommendationsAPI = async () => {
-  return request('/api/v1/recommendations', { method: 'GET' }); 
-};
-
-// =================================================================
-// 3. 검색 및 상세 조회 API
-// =================================================================
-
-// 정책 검색 (키워드)
-export const getPoliciesAPI = async (keyword) => {
-  return request(`/api/v1/policies?q=${keyword}`, { method: 'GET' });
-};
-
-// 정책 상세 정보 조회
-export const getPolicyDetailAPI = async (policyId) => {
-  return request(`/api/v1/policies/${policyId}`, { method: 'GET' });
-};
-
-// 정책 AI 분석 결과 조회 (신청 도우미용)
-export const getPolicyAIResultAPI = async (policyId) => {
-  return request(`/api/v1/policies/${policyId}/ai-result`, { method: 'GET' });
 };

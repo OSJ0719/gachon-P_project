@@ -8,7 +8,7 @@ import { getPolicyDetailAPI, getPolicyAIResultAPI } from '../api';
 export default function PolicyDetailScreen({ navigation, route }) {
   const { policyId } = route.params;
   const insets = useSafeAreaInsets();
-  const [detail, setDetail] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   
   const [showAI, setShowAI] = useState(false);
@@ -19,8 +19,14 @@ export default function PolicyDetailScreen({ navigation, route }) {
     async function load() {
       try {
         const res = await getPolicyDetailAPI(policyId);
-        if (res.success) setDetail(res.data);
-      } catch (e) { console.error(e); } finally { setLoading(false); }
+        if (res.success) {
+           setData(res.data);
+        }
+      } catch (e) { 
+        console.error(e); 
+      } finally { 
+        setLoading(false); 
+      }
     }
     load();
   }, [policyId]);
@@ -32,12 +38,18 @@ export default function PolicyDetailScreen({ navigation, route }) {
       try {
         const res = await getPolicyAIResultAPI(policyId);
         if (res.success) setAiGuide(res.data);
-      } catch (e) {} finally { setAiLoading(false); }
+      } catch (e) {
+        console.error(e);
+      } finally { 
+        setAiLoading(false); 
+      }
     }
   };
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
-  if (!detail) return <View style={styles.center}><Text>정보를 불러올 수 없습니다.</Text></View>;
+  if (!data || !data.policy) return <View style={styles.center}><Text>정보를 불러올 수 없습니다.</Text></View>;
+
+  const { policy, ai, requiredDocuments } = data;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}> 
@@ -47,46 +59,72 @@ export default function PolicyDetailScreen({ navigation, route }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>상세 정보</Text>
         <TouchableOpacity style={{ padding: 8 }}>
-          <Bookmark size={24} color={COLORS.textDim} />
+          {/* 북마크 상태 반영 (userContext 활용 가능) */}
+          <Bookmark size={24} color={data.userContext?.bookmarked ? COLORS.primary : COLORS.textDim} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-        <Text style={styles.category}>{detail.category || '복지'}</Text>
-        <Text style={styles.title}>{detail.title}</Text>
+        {/* [DTO 매핑] 카테고리 이름 */}
+        <Text style={styles.category}>{policy.categoryName || '복지'}</Text>
+        {/* [DTO 매핑] 정책 제목 */}
+        <Text style={styles.title}>{policy.title}</Text>
         
+        {/* AI 요약 카드 */}
         <View style={styles.aiSummaryCard}>
           <View style={styles.aiHeaderRow}>
             <Bot size={28} color={COLORS.primary} fill={COLORS.primaryLight} />
             <Text style={styles.aiTitleText}>AI가 쉽게 설명해드려요</Text>
           </View>
           <Text style={styles.aiBodyText}>
-            {detail.summary || "AI가 내용을 요약해 드립니다."}
+            {/* [DTO 매핑] easyText 활용 */}
+            {ai?.easyText || policy.summaryText || "AI가 내용을 요약해 드립니다."}
           </Text>
           <View style={styles.aiDecoration}>
             <Sparkles size={100} color={COLORS.primary} style={{ opacity: 0.05 }} />
           </View>
         </View>
 
+        {/* 신청 자격 */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>📋 신청 자격</Text>
-          <Text style={styles.bodyText}>{detail.eligibility || '상세 내용 참조'}</Text>
+          <Text style={styles.bodyText}>
+            {/* [DTO 매핑] targetDescription 활용 */}
+            {policy.targetDescription || '상세 내용 참조'}
+          </Text>
         </View>
 
+        {/* 필요 서류 */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>📄 필요 서류</Text>
-          <Text style={styles.bodyText}>{detail.documents || '신분증'}</Text>
+          {requiredDocuments && requiredDocuments.length > 0 ? (
+            requiredDocuments.map((doc, idx) => (
+              <View key={doc.id || idx} style={{ marginBottom: 8 }}>
+                <Text style={styles.bodyText}>• {doc.name}</Text>
+                {doc.description && <Text style={[styles.bodyText, { fontSize: 14, color: COLORS.textDim, marginLeft: 10 }]}>{doc.description}</Text>}
+              </View>
+            ))
+          ) : (
+            <Text style={styles.bodyText}>별도 제출 서류 없음</Text>
+          )}
         </View>
+
+        {/* 제공 기관 및 문의처 (DTO에 있으므로 추가 표시 가능) */}
+        <View style={styles.card}>
+            <Text style={styles.sectionTitle}>📞 문의처</Text>
+            <Text style={styles.bodyText}>{policy.provider || '정보 없음'}</Text>
+        </View>
+
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Platform.OS === 'ios' ? 20 : 20 }]}>
+      <View style={[styles.footer, { paddingBottom: Platform.OS === 'ios' ? 0 : 20 }]}>
         <TouchableOpacity style={styles.aiButton} onPress={handleOpenAIGuide}>
           <Bot size={24} color="white" />
           <Text style={styles.aiButtonText}>AI 신청 도우미 열기</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 🤖 AI 도우미 모달 */}
+      {/* 🤖 AI 도우미 모달 (기존 로직 유지) */}
       <Modal 
         visible={showAI} 
         animationType="slide" 
@@ -94,7 +132,6 @@ export default function PolicyDetailScreen({ navigation, route }) {
         statusBarTranslucent={true}
       >
         <View style={styles.modalOverlay}>
-          {/* 흰색 배경 박스 */}
           <View style={[
             styles.modalContent, 
             { paddingBottom: insets.bottom + 20 }

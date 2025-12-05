@@ -3,45 +3,95 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Refres
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Menu, Search, Sun, MapPin, Bell, CloudRain, Cloud, Bookmark, ChevronRight } from 'lucide-react-native';
 import { COLORS } from '../theme';
-import { getHomeSummaryAPI, getSchedulesAPI, getBookmarksAPI } from '../api';
+import { getHomeSummaryAPI, getBookmarksAPI } from '../api';
 import { useTheme } from '../context/ThemeContext';
-
 import SideMenu from '../components/SideMenu';
 import BottomNavigation from '../components/BottomNavigation';
 
 export default function HomeScreen({ navigation, route }) {
-  const { scale } = useTheme(); // 글자 크기 배율 가져오기
+  const { scale } = useTheme();
   const user = route.params?.user || { name: '사용자' };
+  const displayUserName = typeof user === 'string' ? user : user.name;
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 초기값 null로 설정 (로딩 중이거나 데이터 없음 표현)
   const [weatherData, setWeatherData] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
 
+  // 날짜 포맷 헬퍼 (예: 2025-12-05 -> 12월 5일)
+  const formatUserDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+  };
+
+  // 요일 계산 헬퍼
+  const getDayName = (dateStr) => {
+    if (!dateStr) return '';
+    const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+    return days[new Date(dateStr).getDay()];
+  };
+
+  // 날씨 상태 변환 헬퍼 (DTO -> UI)
+  const mapSkyCondition = (condition) => {
+    const map = {
+      'CLOUDY': '흐림',
+      'RAINY': '비',
+      'SNOW': '눈',
+      'SUNNY': '맑음',
+      'CLEAR': '맑음'
+    };
+    return map[condition] || '맑음';
+  };
+
   const fetchData = async () => {
     try {
-      // 1. 날씨 정보
+      // 1. 홈 화면 요약 정보 (날씨 + 오늘의 일정 + 추천 정책)
       const summaryRes = await getHomeSummaryAPI();
-      if (summaryRes.success) {
-        setWeatherData(summaryRes.data);
+      
+      if (summaryRes.success && summaryRes.data) {
+        const data = summaryRes.data;
+
+        // 1-1. 날씨 데이터 매핑
+        if (data.weather) {
+          setWeatherData({
+            date: formatUserDate(data.weather.baseDate),
+            day: getDayName(data.weather.baseDate),
+            weather: {
+              temp: data.weather.tempCurrent,
+              humidity: data.weather.humidity,
+              status: mapSkyCondition(data.weather.skyCondition),
+              location: data.weather.regionName
+            },
+            comment: data.weather.summary
+          });
+        }
+
+        // 1-2. 오늘의 일정 데이터 매핑
+        if (Array.isArray(data.todayEvents)) {
+          const mappedEvents = data.todayEvents.map(evt => ({
+            id: evt.id,
+            time: evt.startTime ? evt.startTime.substring(0, 5) : '00:00',
+            title: evt.title,
+            location: evt.memo
+          }));
+          setSchedules(mappedEvents);
+        } else {
+            setSchedules([]);
+        }
+
       } else {
-        console.log('날씨 데이터 로드 실패:', summaryRes.message);
+        console.log('홈 요약 데이터 로드 실패:', summaryRes.message);
       }
 
-      // 2. 오늘 일정
-      const today = new Date().toISOString().split('T')[0];
-      const scheduleRes = await getSchedulesAPI(today);
-      if (scheduleRes.success && Array.isArray(scheduleRes.data)) {
-        setSchedules(scheduleRes.data);
-      }
-
-      // 3. 북마크
+      // 2. 북마크 (별도 API 유지)
       const bookmarkRes = await getBookmarksAPI();
       if (bookmarkRes.success && Array.isArray(bookmarkRes.data)) {
         setBookmarks(bookmarkRes.data);
       }
+
     } catch (e) {
       console.error('데이터 로딩 중 에러:', e);
     }
@@ -85,7 +135,6 @@ export default function HomeScreen({ navigation, route }) {
           activeOpacity={0.9}
         >
           <Search size={24} color={COLORS.primary} />
-          {/* 텍스트 잘림 방지를 위해 flex: 1 적용 */}
           <Text style={[styles.searchText, { fontSize: 16 * scale }]} numberOfLines={1} ellipsizeMode="tail">
             복지 서비스 검색하기 (예: 난방비)
           </Text>
@@ -98,7 +147,7 @@ export default function HomeScreen({ navigation, route }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
       >
         
-        {/* 날씨 카드 (데이터가 있을 때만 표시) */}
+        {/* 날씨 카드 */}
         {weatherData ? (
           <View style={styles.card}>
             <View style={styles.weatherHeader}>
@@ -125,7 +174,6 @@ export default function HomeScreen({ navigation, route }) {
             </View>
           </View>
         ) : (
-          // 데이터 로딩 실패/중일 때 표시할 간단한 공간
           <View style={[styles.card, { alignItems: 'center', padding: 30 }]}>
             <Text style={{ color: COLORS.textDim }}>날씨 정보를 불러오는 중입니다...</Text>
           </View>
@@ -143,15 +191,17 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={[styles.emptyText, { fontSize: 16 * scale }]}>오늘 예정된 일정이 없습니다.</Text>
           ) : (
             schedules.map((item, index) => (
-              <View key={item.id}>
+              <View key={item.id || index}>
                 <View style={styles.scheduleItem}>
                   <Text style={[styles.timeText, { fontSize: 18 * scale }]}>{item.time}</Text>
                   <View style={{ flex: 1, marginLeft: 16 }}>
                     <Text style={[styles.scheduleTitle, { fontSize: 18 * scale }]}>{item.title}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                      <MapPin size={14} color={COLORS.textDim} />
-                      <Text style={[styles.locationSmall, { fontSize: 14 * scale }]}> {item.location}</Text>
-                    </View>
+                    {item.location && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <MapPin size={14} color={COLORS.textDim} />
+                            <Text style={[styles.locationSmall, { fontSize: 14 * scale }]}> {item.location}</Text>
+                        </View>
+                    )}
                   </View>
                 </View>
                 {index < schedules.length - 1 && <View style={styles.divider} />}
@@ -184,7 +234,7 @@ export default function HomeScreen({ navigation, route }) {
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-                    <Text style={[styles.categoryBadge, { fontSize: 12 * scale }]}>{item.category}</Text>
+                    <Text style={[styles.categoryBadge, { fontSize: 12 * scale }]}>{item.category || '복지'}</Text>
                   </View>
                   <Text style={[styles.bookmarkTitle, { fontSize: 17 * scale }]}>{item.title}</Text>
                 </View>
@@ -202,7 +252,7 @@ export default function HomeScreen({ navigation, route }) {
         isOpen={menuOpen} 
         onClose={() => setMenuOpen(false)} 
         navigation={navigation}
-        userName={typeof user === 'string' ? user : user.name}
+        userName={displayUserName}
       />
     </SafeAreaView>
   );
