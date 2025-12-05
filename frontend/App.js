@@ -16,6 +16,7 @@ import RecommendationScreen from './src/screens/RecommendationScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import PolicyDetailScreen from './src/screens/PolicyDetailScreen';
+import NotificationScreen from './src/screens/NotificationScreen';
 
 SplashScreen.preventAutoHideAsync();
 const Stack = createNativeStackNavigator();
@@ -45,6 +46,7 @@ function App() {
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Search" component={SearchScreen} />
           <Stack.Screen name="PolicyDetail" component={PolicyDetailScreen} />
+          <Stack.Screen name="Notification" component={NotificationScreen} />
           
           <Stack.Screen name="Chatbot" component={HomeScreen} />
         </Stack.Navigator>

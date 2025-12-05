@@ -124,8 +124,18 @@ export default function HomeScreen({ navigation, route }) {
             <Menu size={28} color="white" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { fontSize: 22 * scale }]}>AI 든든 비서</Text>
-          <TouchableOpacity style={{ padding: 5 }}>
+          
+          <TouchableOpacity 
+            style={{ padding: 5, position: 'relative' }}
+            onPress={() => navigation.navigate('Notification')}
+          >
             <Bell size={28} color="white" />
+            {/* 알림이 있다는 표시 - 실제로는 API 결과에 따라 제어 */}
+            <View style={{
+              position: 'absolute', top: 5, right: 3, 
+              width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.error, 
+              borderWidth: 1.5, borderColor: COLORS.primary 
+            }} />
           </TouchableOpacity>
         </View>
 

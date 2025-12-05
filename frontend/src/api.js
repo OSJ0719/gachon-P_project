@@ -187,3 +187,53 @@ export const createScheduleAPI = async (date, time, title) => {
 export const getBookmarksAPI = async () => {
   return request('/api/v1/bookmarks', { method: 'GET' });
 };
+
+// =================================================================
+// 5. 알림 및 변경 내역 API (New)
+// =================================================================
+
+// 알림 목록 조회 (임의 구현)
+export const getNotificationsAPI = async () => {
+  // 실제 서버가 준비되면: return request('/api/v1/notifications', { method: 'GET' });
+  
+  // 현재는 더미 데이터 반환 (변경 전/후 비교 데이터 포함)
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        data: [
+          {
+            id: 1,
+            type: 'UPDATE', // UPDATE, INFO 등
+            title: '어르신 공공일자리 지원사업',
+            message: '활동비 지원 금액이 인상되었습니다.',
+            date: '2025-12-05',
+            read: false,
+            // 변경 비교 데이터 (Diff)
+            changes: [
+              {
+                field: '지원 금액',
+                before: '월 최대 27만원',
+                after: '월 최대 30만원'
+              },
+              {
+                field: '모집 인원',
+                before: '50명',
+                after: '70명 (증원)'
+              }
+            ]
+          },
+          {
+            id: 2,
+            type: 'DEADLINE',
+            title: '난방비 긴급 지원',
+            message: '신청 마감이 3일 남았습니다.',
+            date: '2025-12-04',
+            read: true,
+            changes: [] // 변경사항 없음 (단순 알림)
+          }
+        ]
+      });
+    }, 500); // 0.5초 딜레이 시뮬레이션
+  });
+};
