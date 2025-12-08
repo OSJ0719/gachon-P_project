@@ -11,15 +11,20 @@ const request = async (endpoint, options = {}) => {
     const url = `${BASE_URL}${endpoint}`;
     console.log(`📡 [API 요청] ${options.method || 'GET'} ${url}`);
 
-    const token = await AsyncStorage.getItem('userToken');
-
     const headers = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers || {}),
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    // ✅ endpoint 기준으로 auth URL 판별
+    const isAuthUrl = endpoint.startsWith('/api/v1/auth/');
+
+    // ✅ auth URL이 아닐 때만 토큰 부착
+    if (!isAuthUrl) {
+      const token = await AsyncStorage.getItem('userToken'); // 🔑 키 이름 통일
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
     }
 
     const response = await fetch(url, {
@@ -35,15 +40,25 @@ const request = async (endpoint, options = {}) => {
       return { 
         success: false, 
         status: response.status, 
-        error: data,
-        message: data.message || '서버 오류가 발생했습니다.'
+        data,
+        message: data?.message || '서버 오류가 발생했습니다.',
       };
     }
 
-    return { success: true, data };
+    return { 
+      success: true, 
+      status: response.status,
+      data,
+      message: data?.message
+    };
   } catch (error) {
     console.error(`🚨 [네트워크 에러] ${endpoint}:`, error);
-    return { success: false, message: '서버와 연결할 수 없습니다.\n네트워크 상태를 확인해주세요.' };
+    return { 
+      success: false, 
+      status: 0,
+      data: null,
+      message: '서버와 연결할 수 없습니다.\n네트워크 상태를 확인해주세요.' 
+    };
   }
 };
 
@@ -75,6 +90,7 @@ export const logoutAPI = async () => {
   });
 };
 
+//이후 추가
 // 비밀번호 변경
 export const changePasswordAPI = async (currentPassword, newPassword) => {
   return request('/api/v1/auth/password/change', {
@@ -179,13 +195,42 @@ export const getSchedulesAPI = async (date) => {
 export const createScheduleAPI = async (date, time, title) => {
   return request('/api/v1/calendar/events', {
     method: 'POST',
-    body: JSON.stringify({ date, time, title })
+    body: JSON.stringify({
+      date,
+      title,
+      memo: null,       // or ''
+      startTime: time,  // "HH:mm"
+      endTime: null,
+      policyId: null,
+      documentId: null,
+    }),
   });
 };
 
 // 북마크 목록 조회
 export const getBookmarksAPI = async () => {
   return request('/api/v1/bookmarks', { method: 'GET' });
+};
+// 북마크 추가
+export const createBookmarkAPI = async (policyId, shortNote = null) => {
+  return request('/api/v1/bookmarks', {
+    method: 'POST',
+    body: JSON.stringify({
+      policyId,
+      shortNote,   // 한 줄 메모가 아직 없으면 null 유지
+    }),
+  });
+};
+
+// 북마크 해제
+export const deleteBookmarkAPI = async (policyId) => {
+  // 백엔드가 BookmarkDeleteRequest(policyId)를 받는 구조라고 가정
+  return request('/api/v1/bookmarks', {
+    method: 'DELETE',
+    body: JSON.stringify({
+      policyId,
+    }),
+  });
 };
 
 // =================================================================

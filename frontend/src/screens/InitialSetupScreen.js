@@ -9,29 +9,37 @@ export default function InitialSetupScreen({ navigation, route }) {
   const user = route.params?.user || {};
   const [step, setStep] = useState(1); // 1: 관심사, 2: 지역, 3: 복지정보
 
-  // --- 상태 관리 ---
-  // 1. 관심사
-  const [categories, setCategories] = useState([]);
-  const categoryList = ['건강/의료', '일자리', '주거/생활', '교통', '교육', '금융', '문화/여가', '돌봄'];
+  // --- 1. 관심사: 코드 기반으로 관리 ---
+  const CATEGORY_OPTIONS = [
+    { label: '보육·돌봄',       code: 'CHILDCARE' },
+    { label: '교육·장학',       code: 'EDUCATION' },
+    { label: '기타',            code: 'ETC' },
+    { label: '금융·서민금융',   code: 'FINANCE' },
+    { label: '지자체 생활지원', code: 'LOCAL' },
+    { label: '노년·고령자',     code: 'SENIOR' },
+  ];
 
-  // 2. 지역 (시/도, 시/군/구, 읍/면/동)
+  const [selectedCodes, setSelectedCodes] = useState([]); // <-- 여기서 코드 배열만 저장
+
+  // 2. 지역
   const [region, setRegion] = useState({ city: '', district: '', dong: '' });
   const [showCityModal, setShowCityModal] = useState(false);
   const cityList = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
 
   // 3. 복지 정보
   const [welfareInfo, setWelfareInfo] = useState({
-    incomeLevel: 'general', // general(일반), basic(기초수급), near(차상위)
-    hasDisability: false,   // 장애 여부
-    livingAlone: false,     // 독거 여부
+    incomeLevel: 'general',
+    hasDisability: false,
+    livingAlone: false,
   });
 
-  // --- 핸들러 함수 ---
-  const toggleCategory = (cat) => {
-    if (categories.includes(cat)) {
-      setCategories(categories.filter(c => c !== cat));
+  // --- 핸들러 ---
+
+  const toggleCategory = (code) => {
+    if (selectedCodes.includes(code)) {
+      setSelectedCodes(selectedCodes.filter(c => c !== code));
     } else {
-      setCategories([...categories, cat]);
+      setSelectedCodes([...selectedCodes, code]);
     }
   };
 
@@ -39,22 +47,23 @@ export default function InitialSetupScreen({ navigation, route }) {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      // 마지막 단계: 서버 전송 (실제 API 연동)
       try {
+        // ✅ 백엔드에 보낼 최종 데이터
         const profileData = {
-          categories,
-          region, // { city, district, dong }
-          welfareInfo
+          regionCtpv: region.city,
+          regionSgg: region.district,
+          regionDong: region.dong,
+          incomeLevel: welfareInfo.incomeLevel,
+          hasDisability: welfareInfo.hasDisability,
+          livingAlone: welfareInfo.livingAlone,
+          interestCodes: selectedCodes,  // ★ 핵심: 코드 배열
         };
-        
-        // API 호출
+
         const res = await updateUserProfileAPI(profileData);
-        
+
         if (res.success) {
-          // 성공 시 홈으로 이동
           navigation.replace('Home', { user });
         } else {
-          // 실패 시 에러 메시지
           Alert.alert('오류', res.message || '설정 저장에 실패했습니다.');
         }
       } catch (e) {
@@ -68,23 +77,24 @@ export default function InitialSetupScreen({ navigation, route }) {
     if (step > 1) setStep(step - 1);
   };
 
-  // --- 단계별 화면 렌더링 (UI 코드는 기존과 동일) ---
-  
-  // Step 1: 관심사 선택
+  // --- Step 1: 관심사 선택 ---
   const renderStep1 = () => (
     <View>
       <Text style={styles.title}>어떤 정보가 필요하세요?</Text>
       <Text style={styles.subtitle}>관심 있는 분야를 모두 선택해주세요.</Text>
+
       <View style={styles.grid}>
-        {categoryList.map((cat) => {
-          const isSelected = categories.includes(cat);
+        {CATEGORY_OPTIONS.map((cat) => {
+          const isSelected = selectedCodes.includes(cat.code);
           return (
-            <TouchableOpacity 
-              key={cat} 
+            <TouchableOpacity
+              key={cat.code}
               style={[styles.optionBtn, isSelected && styles.optionBtnSelected]}
-              onPress={() => toggleCategory(cat)}
+              onPress={() => toggleCategory(cat.code)}
             >
-              <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>{cat}</Text>
+              <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                {cat.label}
+              </Text>
               {isSelected && <Check size={20} color="white" />}
             </TouchableOpacity>
           );

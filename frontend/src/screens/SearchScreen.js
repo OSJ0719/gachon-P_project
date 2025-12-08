@@ -21,9 +21,15 @@ export default function SearchScreen({ navigation }) {
       const res = await getPoliciesAPI(keyword);
       
       if (res.success && Array.isArray(res.data)) {
-        setResults(res.data);
+        const mapped = res.data.map(p => ({
+          id: p.id,
+          title: p.name,
+          category: p.mainCategoryName,
+          summary: p.summary,
+        }));
+        setResults(mapped);
       } else {
-        setResults([]); // 결과 없음 or 에러
+        setResults([]);
       }
     } catch (e) {
       console.error(e);

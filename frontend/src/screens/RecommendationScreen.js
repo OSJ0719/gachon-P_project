@@ -48,14 +48,28 @@ export default function RecommendationScreen({ navigation }) {
               onPress={() => navigation.navigate('PolicyDetail', { policyId: item.id })}
             >
               <View style={styles.cardHeader}>
-                <View style={styles.rankBadge}><Text style={styles.rankText}>{index + 1}</Text></View>
-                <Text style={styles.category}>{item.category}</Text>
+                <View style={styles.rankBadge}>
+                  <Text style={styles.rankText}>{index + 1}</Text>
+                </View>
+                {/* 카테고리명: mainCategoryName 사용 */}
+                <Text style={styles.category}>
+                  {item.mainCategoryName || '복지'}
+                </Text>
               </View>
-              <Text style={styles.title}>{item.title}</Text>
+
+              {/* 제목은 DTO의 title 필드 그대로 사용 */}
+              <Text style={styles.title}>{item.name}</Text>
+
               <View style={styles.reasonBox}>
                 <Sparkles size={16} color={COLORS.primary} />
-                <Text style={styles.reasonText}>{item.reason}</Text>
+                {/* reason 대신 summary나 기관명을 활용 */}
+                <Text style={styles.reasonText}>
+                  {item.summary 
+                    || (item.deptName ? `${item.deptName}에서 제공하는 지원입니다.` : '어르신께 도움이 될만한 혜택입니다.')
+                  }
+                </Text>
               </View>
+
               <View style={styles.footer}>
                 <Text style={styles.detailBtn}>자세히 보기</Text>
                 <ChevronRight size={20} color={COLORS.textDim} />

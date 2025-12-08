@@ -7,7 +7,6 @@ import { getHomeSummaryAPI, getBookmarksAPI } from '../api';
 import { useTheme } from '../context/ThemeContext';
 import SideMenu from '../components/SideMenu';
 import BottomNavigation from '../components/BottomNavigation';
-
 export default function HomeScreen({ navigation, route }) {
   const { scale } = useTheme();
   const user = route.params?.user || { name: '사용자' };
@@ -19,6 +18,15 @@ export default function HomeScreen({ navigation, route }) {
   const [weatherData, setWeatherData] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
+
+const mapBookmarkDtoToUI = (dto) => ({
+  id: dto.policy.id,                         // 정책 ID
+  bookmarkId: dto.id,                        // 필요하면 별도 보관
+  category: dto.policy.mainCategoryName,
+  title: dto.policy.name,
+  date: dto.createdAt?.substring(0, 10),     // "YYYY-MM-DD"
+});
+
 
   // 날짜 포맷 헬퍼 (예: 2025-12-05 -> 12월 5일)
   const formatUserDate = (dateStr) => {
@@ -45,7 +53,6 @@ export default function HomeScreen({ navigation, route }) {
     };
     return map[condition] || '맑음';
   };
-
   const fetchData = async () => {
     try {
       // 1. 홈 화면 요약 정보 (날씨 + 오늘의 일정 + 추천 정책)
@@ -87,9 +94,9 @@ export default function HomeScreen({ navigation, route }) {
       }
 
       // 2. 북마크 (별도 API 유지)
-      const bookmarkRes = await getBookmarksAPI();
-      if (bookmarkRes.success && Array.isArray(bookmarkRes.data)) {
-        setBookmarks(bookmarkRes.data);
+      const res = await getBookmarksAPI();
+      if (res.success && Array.isArray(res.data)) {
+        setBookmarks(res.data.map(mapBookmarkDtoToUI));
       }
 
     } catch (e) {

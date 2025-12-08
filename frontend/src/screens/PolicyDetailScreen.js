@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, ActivityIndicator, Platform,Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'; 
 import { ArrowLeft, Bookmark, Bot, X, Calendar as CalendarIcon, Phone, Sparkles } from 'lucide-react-native';
 import { COLORS } from '../theme';
-import { getPolicyDetailAPI, getPolicyAIResultAPI } from '../api';
+import { getPolicyDetailAPI, getPolicyAIResultAPI,
+        createBookmarkAPI,
+        deleteBookmarkAPI,
+      } from '../api';
 
 export default function PolicyDetailScreen({ navigation, route }) {
   const { policyId } = route.params;
@@ -14,7 +17,12 @@ export default function PolicyDetailScreen({ navigation, route }) {
   const [showAI, setShowAI] = useState(false);
   const [aiGuide, setAiGuide] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
-
+  const [bookmarked, setBookmarked] = useState(false);
+  useEffect(() => {
+    if (data?.userContext) {
+      setBookmarked(!!data.userContext.bookmarked);
+    }
+  }, [data]);
   useEffect(() => {
     async function load() {
       try {
@@ -45,7 +53,44 @@ export default function PolicyDetailScreen({ navigation, route }) {
       }
     }
   };
-
+  const handleToggleBookmark = async () => {
+  try {
+    if (!bookmarked) {
+      // ✅ 북마크 추가
+      const res = await createBookmarkAPI(policyId, null);
+      if (res.success) {
+        setBookmarked(true);
+        setData(prev => ({
+          ...prev,
+          userContext: {
+            ...(prev?.userContext || {}),
+            bookmarked: true,
+          },
+        }));
+      } else {
+        Alert.alert('북마크 실패', res.message || '북마크 추가에 실패했습니다.');
+      }
+    } else {
+      // ❌ 북마크 해제
+      const res = await deleteBookmarkAPI(policyId);
+      if (res.success) {
+        setBookmarked(false);
+        setData(prev => ({
+          ...prev,
+          userContext: {
+            ...(prev?.userContext || {}),
+            bookmarked: false,
+          },
+        }));
+      } else {
+        Alert.alert('북마크 해제 실패', res.message || '북마크 해제에 실패했습니다.');
+      }
+    }
+  } catch (e) {
+    console.error('bookmark toggle error', e);
+    Alert.alert('오류', '북마크 처리 중 오류가 발생했습니다.');
+  }
+};
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
   if (!data || !data.policy) return <View style={styles.center}><Text>정보를 불러올 수 없습니다.</Text></View>;
 
@@ -58,7 +103,7 @@ export default function PolicyDetailScreen({ navigation, route }) {
           <ArrowLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>상세 정보</Text>
-        <TouchableOpacity style={{ padding: 8 }}>
+        <TouchableOpacity style={{ padding: 8 }} onPress={handleToggleBookmark}>
           {/* 북마크 상태 반영 (userContext 활용 가능) */}
           <Bookmark size={24} color={data.userContext?.bookmarked ? COLORS.primary : COLORS.textDim} />
         </TouchableOpacity>
@@ -87,7 +132,7 @@ export default function PolicyDetailScreen({ navigation, route }) {
 
         {/* 신청 자격 */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>📋 신청 자격</Text>
+          <Text style={styles.sectionTitle}>📋 관련 연령대</Text>
           <Text style={styles.bodyText}>
             {/* [DTO 매핑] targetDescription 활용 */}
             {policy.targetDescription || '상세 내용 참조'}

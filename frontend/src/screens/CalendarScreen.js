@@ -28,10 +28,16 @@ export default function CalendarScreen({ navigation }) {
       const res = await getSchedulesAPI(dateStr);
       
       if (res.success && Array.isArray(res.data)) {
-        setSchedules(res.data);
-      } else {
-        setSchedules([]);
-      }
+          const mapped = res.data.map(evt => ({
+            id: evt.id,
+            time: evt.startTime ? evt.startTime.substring(0, 5) : '',
+            title: evt.title,
+            location: evt.memo ?? '',
+          }));
+          setSchedules(mapped);
+        } else {
+          setSchedules([]);
+        }
     } catch (e) {
       console.error('일정 로드 실패:', e);
       setSchedules([]);
