@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/aid_devops?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: p-pro_test
+    password: dhtkdwns@&!9
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update        # 개발 초기엔 update가 편함, 배포 시 none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+        physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+
+  jackson:
+    time-zone: Asia/Seoul
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+
+security:
+  jwt:
+    secret: "cWhA8zvDKu3lHvUEAjb6mzpr5xO55uDtaJ6SNeOXSsx"
+    access-token-validity-ms: 3600000   # 1 hour
