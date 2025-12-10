@@ -3,3 +3,5 @@ langchain_core
 pydantic
 fastapi
 uvicorn
+sentence-transformers
+langchain_community
