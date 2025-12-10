@@ -90,7 +90,6 @@ export const logoutAPI = async () => {
   });
 };
 
-//이후 추가
 // 비밀번호 변경
 export const changePasswordAPI = async (currentPassword, newPassword) => {
   return request('/api/v1/auth/password/change', {
@@ -234,7 +233,7 @@ export const deleteBookmarkAPI = async (policyId) => {
 };
 
 // =================================================================
-// 5. 알림 및 변경 내역 API (New)
+// 5. 알림 및 변경 내역 API
 // =================================================================
 
 // 알림 목록 조회 (임의 구현)
@@ -280,5 +279,44 @@ export const getNotificationsAPI = async () => {
         ]
       });
     }, 500); // 0.5초 딜레이 시뮬레이션
+  });
+};
+
+// =================================================================
+// 6. 챗봇 API (New)
+// =================================================================
+
+// 챗봇 메시지 전송 및 응답 수신
+export const sendChatbotMessageAPI = async (message) => {
+  // [실제 API 구현 시]:
+  /*
+  return request('/api/v1/chatbot/ask', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+  */
+
+  // [임시 Mock 구현]: 키워드에 따라 응답 생성
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      let botResponse = "제가 잘 모르는 내용이에요. 다시 말씀해 주시겠어요?";
+
+      if (message.includes('자격')) {
+        botResponse = "신청 자격은 만 65세 이상이시며, 소득 인정액이 선정 기준액 이하인 분들이 대상입니다. 기초연금 수급자라면 대부분 해당됩니다.";
+      } else if (message.includes('서류')) {
+        botResponse = "필요한 서류는 '신분증'과 '통장 사본'입니다. 주민센터에 방문하시면 담당자가 출력을 도와드릴 수 있습니다.";
+      } else if (message.includes('대리인')) {
+        botResponse = "네, 가능합니다! 자녀분이나 배우자분이 신분증과 위임장을 지참하시면 대신 신청하실 수 있습니다.";
+      } else if (message.includes('안녕')) {
+        botResponse = "안녕하세요! 오늘도 건강하고 행복한 하루 되세요. 😊";
+      }
+
+      resolve({
+        success: true,
+        data: {
+          response: botResponse
+        }
+      });
+    }, 1000); // 1초 뒤 응답
   });
 };
