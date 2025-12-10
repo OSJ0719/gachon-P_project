@@ -24,7 +24,12 @@ export default function InitialSetupScreen({ navigation, route }) {
   // 2. 지역
   const [region, setRegion] = useState({ city: '', district: '', dong: '' });
   const [showCityModal, setShowCityModal] = useState(false);
-  const cityList = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
+  // [수정] 도시 이름 변경
+  const cityList = [
+    '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시', '대전광역시', 
+    '울산광역시', '세종특별자치시', '경기도', '강원특별자치도', '충청북도', '충청남도', 
+    '전북특별자치도', '전라남도', '경상북도', '경상남도', '제주특별자치도'
+  ];
 
   // 3. 복지 정보
   const [welfareInfo, setWelfareInfo] = useState({
@@ -320,9 +325,9 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: 'white', borderRadius: 24, padding: 24, maxHeight: '80%' },
   modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   cityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
-  cityItem: { width: '30%', paddingVertical: 12, borderRadius: 10, backgroundColor: '#f3f4f6', alignItems: 'center' },
+  cityItem: { width: '45%', paddingVertical: 12, borderRadius: 10, backgroundColor: '#f3f4f6', alignItems: 'center', marginBottom: 8 }, // [수정] 너비 조절
   cityItemSelected: { backgroundColor: COLORS.primary },
-  cityText: { fontSize: 16, fontWeight: 'bold', color: '#374151' },
+  cityText: { fontSize: 14, fontWeight: 'bold', color: '#374151' },
   cityTextSelected: { color: 'white' },
   modalCloseBtn: { alignItems: 'center', padding: 16, marginTop: 10 },
 });

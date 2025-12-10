@@ -76,7 +76,7 @@ export const loginAPI = async (username, password) => {
 
 // 회원가입
 export const signupAPI = async (userData) => {
-  // userData: { username, password, name }
+  // userData: { username, password, name, phone }
   return request('/api/v1/auth/signup', {
     method: 'POST',
     body: JSON.stringify(userData),

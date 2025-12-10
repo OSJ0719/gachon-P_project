@@ -8,6 +8,7 @@ import AuthModal from '../components/AuthModal';
 
 export default function SignupScreen({ navigation }) {
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,7 +16,7 @@ export default function SignupScreen({ navigation }) {
   const [authModal, setAuthModal] = useState({ isOpen: false, type: 'success', message: '', onConfirm: null });
 
   const handleSignup = async () => {
-    if (!name || !username || !password) {
+    if (!name || !phone || !username || !password) {
       setAuthModal({ isOpen: true, type: 'fail', message: '모든 정보를 입력해주세요.' });
       return;
     }
@@ -25,7 +26,7 @@ export default function SignupScreen({ navigation }) {
     }
 
     try {
-      const result = await signupAPI({ username, password, name });
+      const result = await signupAPI({ username, password, name, phone });
       if (result.success) {
         setAuthModal({
           isOpen: true,
@@ -34,7 +35,7 @@ export default function SignupScreen({ navigation }) {
           onConfirm: () => {
             setAuthModal(prev => ({ ...prev, isOpen: false }));
             
-            navigation.replace('InitialSetup', { user: { username, name } }); 
+            navigation.replace('InitialSetup', { user: { username, name, phone } }); 
           },
         });
       }else {
@@ -63,6 +64,17 @@ export default function SignupScreen({ navigation }) {
         <View style={{ gap: 8 }}>
           <Text style={COMMON_STYLES.label}>이름</Text>
           <TextInput style={COMMON_STYLES.input} placeholder="홍길동" value={name} onChangeText={setName} />
+          
+          {/* [추가] 전화번호 입력란 */}
+          <Text style={COMMON_STYLES.label}>전화번호</Text>
+          <TextInput 
+            style={COMMON_STYLES.input} 
+            placeholder="010-0000-0000" 
+            value={phone} 
+            onChangeText={setPhone} 
+            keyboardType="phone-pad"
+          />
+
           <Text style={COMMON_STYLES.label}>아이디</Text>
           <TextInput style={COMMON_STYLES.input} placeholder="아이디 입력" value={username} onChangeText={setUsername} autoCapitalize="none" />
           <Text style={COMMON_STYLES.label}>비밀번호</Text>
