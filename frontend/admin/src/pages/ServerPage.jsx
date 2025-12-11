@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getServerMetrics, getServerLogs } from '../api';
 
 export default function ServerPage() {
+  const [metrics, setMetrics] = useState({
+    apiUptime: '-',
+    aiLatency: '-',
+    dbConnections: '-'
+  });
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    getServerMetrics().then(res => { if(res) setMetrics(res); });
+    getServerLogs().then(res => { if(Array.isArray(res)) setLogs(res); });
+  }, []);
+
   return (
     <div>
       <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginBottom: '24px' }}>서버 관리 및 로그</h2>
@@ -10,9 +23,9 @@ export default function ServerPage() {
         <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '24px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '24px' }}>운영 상태 점검</h3>
           
-          <StatusItem title="Spring Boot API Server" desc="Uptime: 14d 2h 15m" />
-          <StatusItem title="AI Model Server (Gemma)" desc="Latency: 120ms" />
-          <StatusItem title="Database (PostgreSQL)" desc="Connections: 45/100" />
+          <StatusItem title="Spring Boot API Server" desc={`Uptime: ${metrics.apiUptime}`} />
+          <StatusItem title="AI Model Server (Gemma)" desc={`Latency: ${metrics.aiLatency}`} />
+          <StatusItem title="Database (PostgreSQL)" desc={`Connections: ${metrics.dbConnections}`} />
         </div>
 
         {/* 2. 시스템 로그 */}
@@ -26,14 +39,11 @@ export default function ServerPage() {
           </div>
           
           <div style={{ flex: 1, backgroundColor: '#0f172a', borderRadius: '8px', padding: '16px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.8' }}>
-            <div style={{ color: '#94a3b8' }}>2025-11-28 14:20:00 [INFO] System Monitor Started</div>
-            <div style={{ color: '#22c55e' }}>2025-11-28 14:20:01 [INFO] Fetch API: Crawling Success (Target: bokjiro.go.kr)</div>
-            <div style={{ color: '#3b82f6' }}>2025-11-28 14:20:02 [DEBUG] AI Request: Summarize Text (Length: 1500 chars)</div>
-            <div style={{ color: '#22c55e' }}>2025-11-28 14:20:05 [INFO] AI Response: Success (Token Usage: 350)</div>
-            <div style={{ color: '#eab308' }}>2025-11-28 14:21:00 [WARN] Memory Usage Spike: 78% - Optimizing...</div>
-            <div style={{ color: '#22c55e' }}>2025-11-28 14:21:05 [INFO] Garbage Collection Completed</div>
-            <div style={{ color: '#ef4444' }}>2025-11-28 14:25:00 [ERROR] Image OCR Failed (User ID: 8821, Reason: Low Quality)</div>
-            <div style={{ color: '#94a3b8' }}>2025-11-28 14:25:01 [INFO] Retry logic triggered...</div>
+            {logs.map((log, idx) => (
+              <div key={idx} style={{ color: log.includes('[ERROR]') ? '#ef4444' : log.includes('[WARN]') ? '#eab308' : '#22c55e' }}>
+                {log}
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -1,21 +1,47 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileText, FileBarChart, Server, RefreshCw } from 'lucide-react';
+import { getDashboardSummary, getChangeLogs, getServerLogs } from '../api';
 
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalPolicies: 0,
+    dailyReports: 0,
+    serverStatus: 'CHECKING',
+    aiApiCount: 0
+  });
+  const [recentLogs, setRecentLogs] = useState([]);
+  const [serverLogs, setServerLogs] = useState([]);
+
+  useEffect(() => {
+    // 1. 대시보드 요약 정보 조회
+    getDashboardSummary().then(res => {
+      if(res) setStats(res); 
+    });
+
+    // 2. 최근 변경 이력 (상위 3개만 표시한다고 가정)
+    getChangeLogs().then(res => {
+      if(Array.isArray(res)) setRecentLogs(res.slice(0, 3));
+    });
+
+    // 3. 실시간 서버 로그
+    getServerLogs().then(res => {
+      if(Array.isArray(res)) setServerLogs(res);
+    });
+  }, []);
+
   return (
     <div>
       <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginBottom: '24px' }}>대시보드</h2>
       
-      {/* 1. 상단 카드 4개 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
-        <StatCard icon={<FileText size={24} color="#3b82f6" />} bg="#eff6ff" title="총 등록 사업" value="1,240" />
-        <StatCard icon={<FileBarChart size={24} color="#a855f7" />} bg="#f3e8ff" title="오늘 수집된 리포트" value="12" />
-        <StatCard icon={<Server size={24} color="#22c55e" />} bg="#dcfce7" title="서버 상태" value="정상" color="#22c55e" />
-        <StatCard icon={<RefreshCw size={24} color="#f97316" />} bg="#ffedd5" title="AI API 요청 수" value="8,542" />
+        <StatCard icon={<FileText size={24} color="#3b82f6" />} bg="#eff6ff" title="총 등록 사업" value={stats.totalPolicies} />
+        <StatCard icon={<FileBarChart size={24} color="#a855f7" />} bg="#f3e8ff" title="오늘 수집된 리포트" value={stats.dailyReports} />
+        <StatCard icon={<Server size={24} color="#22c55e" />} bg="#dcfce7" title="서버 상태" value={stats.serverStatus} color={stats.serverStatus === '정상' ? '#22c55e' : '#ea580c'} />
+        <StatCard icon={<RefreshCw size={24} color="#f97316" />} bg="#ffedd5" title="AI API 요청 수" value={stats.aiApiCount} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-        {/* 2. 최근 변경 이력 리포트 테이블 */}
+        {/* 최근 리포트 */}
         <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>최근 변경 이력 리포트</h3>
@@ -31,22 +57,20 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              <ReportRow date="2025-11-28" title="2025년 동절기 에너지바우처 지침 변경" status="검토필요" user="AI Bot" />
-              <ReportRow date="2025-11-28" title="노인 일자리 사업 모집 공고 업데이트" status="완료" user="관리자A" />
-              <ReportRow date="2025-11-27" title="기초연금 수급액 인상안 발표" status="완료" user="관리자B" />
+              {recentLogs.map((log, idx) => (
+                <ReportRow key={idx} date={log.date} title={log.title} status={log.status} user={log.manager} />
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* 3. 실시간 서버 로그 */}
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+        {/* 서버 로그 */}
+        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '400px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>실시간 서버 로그</h3>
-          <div style={{ flex: 1, backgroundColor: '#0f172a', borderRadius: '8px', padding: '16px', color: '#22c55e', fontSize: '12px', fontFamily: 'monospace', lineHeight: '1.6' }}>
-            <div>[INFO] 14:20:01 Fetch API Called - /api/policy/update</div>
-            <div style={{ color: '#3b82f6' }}>[DEBUG] 14:20:02 AI Summary Generation Started</div>
-            <div>[INFO] 14:20:05 AI Response Success (Latency: 300ms)</div>
-            <div style={{ color: '#eab308' }}>[WARN] 14:21:00 High Memory Usage Detected (78%)</div>
-            <div>[INFO] 14:22:30 Batch Job Completed</div>
+          <div style={{ flex: 1, backgroundColor: '#0f172a', borderRadius: '8px', padding: '16px', color: '#22c55e', fontSize: '12px', fontFamily: 'monospace', lineHeight: '1.6', overflowY: 'auto' }}>
+            {serverLogs.map((log, idx) => (
+              <div key={idx} style={{ marginBottom: '4px' }}>{log}</div>
+            ))}
           </div>
         </div>
       </div>
