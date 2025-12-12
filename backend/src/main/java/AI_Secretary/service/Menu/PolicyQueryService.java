@@ -156,28 +156,26 @@ public class PolicyQueryService {
         // 1) 기본 정보 DTO
         PolicyBasicDto basicDto = mapToBasicDto(policy);
 
-        // 2) AI 분석 관련 (문서 기반 결과)
+        // 2) 문서 기반 AI 결과 (기존)
         DocumentAiResult aiResult = documentAiResultRepository
                 .findTopByDocument_Policy_IdOrderByCreatedAtDesc(policyId)
                 .orElse(null);
 
-        // 2-1) 요약용 텍스트 생성 후 FastAPI /summary 호출
-        String summarySourceText = buildSummarySourceText(policy, aiResult);
-        String aiSummary = aiSummaryService.summarizeText(summarySourceText);
+        // 2-1) 캐시를 고려한 요약 텍스트 결정
+        String aiSummary = getOrCreateSummary(policy, aiResult);
 
         // 2-2) 신청 도우미(AiGuideResponse)
         AiGuideResponse guide = aiGuideService.getAiGuideForPolicy(policyId);
 
-        // 2-3) 최종 PolicyAiDto 구성
+        // 2-3) 최종 PolicyAiDto 구성 (aiSummary + 나머지 aiResult 정보 + guide)
         PolicyAiDto aiDto = mapToAiDto(policy, aiResult, aiSummary, guide);
 
-        // 3) 필수 서류 목록
-        List<PolicyRequiredDocumentDto> docDtos =
-                policyRequiredDocumentRepository
-                        .findByPolicy_IdOrderBySortOrderAsc(policyId)
-                        .stream()
-                        .map(this::mapToRequiredDocumentDto)
-                        .toList();
+        // 3) 필수 서류
+        List<PolicyRequiredDocumentDto> docDtos = policyRequiredDocumentRepository
+                .findByPolicy_IdOrderBySortOrderAsc(policyId)
+                .stream()
+                .map(this::mapToRequiredDocumentDto)
+                .toList();
 
         // 4) 유저 컨텍스트
         PolicyUserContextDto userContext = null;
@@ -196,13 +194,56 @@ public class PolicyQueryService {
             userContext = new PolicyUserContextDto(bookmarked, hasChecklist, nearestEventDate);
         }
 
-        // ✅ 이제 guide를 따로 넘기지 않고, aiDto 안에 포함된 상태로 리턴
         return new PolicyDetailResponse(
                 basicDto,
                 aiDto,
                 docDtos,
                 userContext
         );
+    }
+    private String getOrCreateSummary(PolicyData policy, DocumentAiResult aiResult) {
+        // 1) 캐시에 유효한 값이 있으면 그대로 사용
+        if (aiResult != null && aiResult.getSummaryText() != null && !aiResult.getSummaryText().isBlank()) {
+
+            // TTL 예시: 7일 이내면 캐시로 인정
+            LocalDateTime createdAt = aiResult.getCreatedAt();
+            if (createdAt != null && createdAt.isAfter(LocalDateTime.now().minusDays(7))) {
+                return aiResult.getSummaryText();
+            }
+        }
+
+        // 2) 없거나 오래된 경우 → 새로 요약 요청
+        String question = buildSummarySourceText(policy, aiResult);  // 여기에서 content_text도 포함되도록 이미 확장 예정이었음
+        String newSummary = aiSummaryService.summarizeText(question);
+
+        if (newSummary == null || newSummary.isBlank()) {
+            // 요약 실패 시: 그래도 이전 요약이 있으면 그거라도 반환
+            return (aiResult != null) ? aiResult.getSummaryText() : null;
+        }
+
+        // 3) DB에 캐시 저장 (로그 겸 캐시)
+        if (aiResult != null) {
+            aiResult.updateSummary(newSummary);
+            // JPA 영속 상태면 @Transactional 안에서 자동 flush, 별도 save() 필요 X
+        } else {
+            // 문서 기반 결과가 전혀 없는 정책이라면:
+            // - Document 엔티티를 불러와서 새 DocumentAiResult를 만들거나,
+            // - 간단히 summary만 저장하는 전용 팩토리 메서드 사용
+            // 예시 코드 (필요에 맞게 수정):
+
+            // Document doc = documentRepository.findTopByPolicyIdOrderByCreatedAtDesc(policy.getId()).orElse(null);
+            // if (doc != null) {
+            //     DocumentAiResult newResult = DocumentAiResult.builder()
+            //             .document(doc)
+            //             .summaryText(newSummary)
+            //             .build();
+            //     documentAiResultRepository.save(newResult);
+            // }
+
+            // 당장 필수는 아니면 이 부분은 나중에 확장해도 됨.
+        }
+
+        return newSummary;
     }
 
     // --------------------------------------------------------------------
@@ -292,47 +333,34 @@ public class PolicyQueryService {
         );
     }
     private String buildSummarySourceText(PolicyData policy, DocumentAiResult aiResult) {
-        // 1️⃣ 1순위: Document.contentText 기반 요약
-        String rawContent = null;
-        if (aiResult != null && aiResult.getDocument() != null) {
-            rawContent = aiResult.getDocument().getContentText(); // ← content_text
-        }
-
-        if (rawContent != null && !rawContent.isBlank()) {
-            StringBuilder sb = new StringBuilder();
-
-            // 원문 전체를 먼저 넣고
-            sb.append(rawContent).append("\n\n");
-
-            // 그 위에 요약 지시 프롬프트만 살짝 얹어준다
-            sb.append(
-                    "위 복지 정책 안내문을 바탕으로, [지원대상], [지원내용], [신청방법]을 중심으로 " +
-                            "노년층도 이해하기 쉬운 2~3문장 요약을 한국어로 작성해 주세요. " +
-                            "전화번호, 법령명, 서식 파일명 등은 요약에 포함하지 않아도 됩니다."
-            );
-
-            return sb.toString();
-        }
-
-        // 2️⃣ fallback: content_text가 없으면 기존 메타데이터 기반 요약으로 생성
         StringBuilder sb = new StringBuilder();
-        sb.append("다음은 복지 정책에 대한 설명입니다.\n\n");
-        sb.append("[정책명] ").append(policy.getName()).append("\n\n");
 
-        if (policy.getSummary() != null) {
-            sb.append("[정책 요약] ").append(policy.getSummary()).append("\n\n");
-        }
-        if (policy.getLifeCycle() != null) {
-            sb.append("[대상 계층] ").append(policy.getLifeCycle()).append("\n\n");
-        }
-        if (policy.getSupportCycle() != null) {
-            sb.append("[지원 형태 또는 주기] ").append(policy.getSupportCycle()).append("\n\n");
-        }
-        if (aiResult != null && aiResult.getEasyExplanationText() != null) {
-            sb.append("[쉬운 설명] ").append(aiResult.getEasyExplanationText()).append("\n\n");
+        // 1) document.content_text가 있으면 최우선 사용
+        if (aiResult != null && aiResult.getDocument() != null
+                && aiResult.getDocument().getContentText() != null
+                && !aiResult.getDocument().getContentText().isBlank()) {
+
+            sb.append(aiResult.getDocument().getContentText()).append("\n\n");
+        } else {
+            // 2) fallback: 정책 메타데이터 + 기존 쉬운 설명/요약을 섞어서 질문 구성
+            sb.append("[사업명]\n").append(policy.getName()).append("\n\n");
+
+            if (policy.getSummary() != null) {
+                sb.append("[정책 요약]\n").append(policy.getSummary()).append("\n\n");
+            }
+            if (policy.getLifeCycle() != null) {
+                sb.append("[대상 계층]\n").append(policy.getLifeCycle()).append("\n\n");
+            }
+            if (policy.getSupportCycle() != null) {
+                sb.append("[지원 형태 또는 주기]\n").append(policy.getSupportCycle()).append("\n\n");
+            }
+            if (aiResult != null && aiResult.getEasyExplanationText() != null) {
+                sb.append("[쉬운 설명]\n").append(aiResult.getEasyExplanationText()).append("\n\n");
+            }
         }
 
-        sb.append("위 내용을 기반으로, 노년층도 이해하기 쉬운 2~3문장의 간단한 요약을 한국어로 작성해 주세요.");
+        sb.append("위 복지 사업 내용을 바탕으로, 노년층도 이해하기 쉬운 2~3문장 한국어 요약을 작성해 주세요.\n")
+                .append("반드시 2~3개의 짧은 문장으로만 작성하고, 지원 내용 / 대상 / 신청 방법만 포함해 주세요.");
 
         return sb.toString();
     }

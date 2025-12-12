@@ -13,6 +13,7 @@ import java.util.List;
 @RequestMapping("/api/admin/reports")
 @RequiredArgsConstructor
 public class AdminPolicyChangeReportController {
+
     private final PolicyChangeReportService policyChangeReportService;
 
     /**
@@ -42,6 +43,31 @@ public class AdminPolicyChangeReportController {
     }
 
     /**
+     * ✅ 관리자 - 보고서 생성
+     *   - 예: POST /api/admin/reports
+     */
+    @PostMapping
+    public ResponseEntity<AdminPolicyChangeReportDto> createReport(
+            @RequestBody AdminPolicyChangeReportDto request
+    ) {
+        var created = policyChangeReportService.createReport(request);
+        return ResponseEntity.ok(created);
+    }
+
+    /**
+     * ✅ 관리자 - 보고서 수정
+     *   - 예: PUT /api/admin/reports/10
+     */
+    @PutMapping("/{reportId}")
+    public ResponseEntity<AdminPolicyChangeReportDto> updateReport(
+            @PathVariable Long reportId,
+            @RequestBody AdminPolicyChangeReportDto request
+    ) {
+        var updated = policyChangeReportService.updateReport(reportId, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
      * ✅ 관리자 - 보고서 승인 및 배포(알림 발송)
      *   - 예: POST /api/admin/reports/10/approve
      */
@@ -50,6 +76,18 @@ public class AdminPolicyChangeReportController {
             @PathVariable Long reportId
     ) {
         policyChangeReportService.approveAndNotify(reportId);
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/auto-draft/from-change-log/{changeLogId}")
+    public ResponseEntity<AdminPolicyChangeReportDto> createDraftFromChangeLog(
+            @PathVariable Long changeLogId
+    ) {
+        var dto = policyChangeReportService.createDraftFromChangeLog(changeLogId);
+        return ResponseEntity.ok(dto);
+    }
+    @DeleteMapping("/{reportId}")
+    public ResponseEntity<Void> delete(@PathVariable Long reportId) {
+        policyChangeReportService.delete(reportId);
         return ResponseEntity.ok().build();
     }
 }

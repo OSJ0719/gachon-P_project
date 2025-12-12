@@ -1,5 +1,0 @@
-langchain_ollama
-langchain_core
-pydantic
-fastapi
-uvicorn

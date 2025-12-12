@@ -223,65 +223,83 @@ export const createBookmarkAPI = async (policyId, shortNote = null) => {
 
 // 북마크 해제
 export const deleteBookmarkAPI = async (policyId) => {
-  // 백엔드가 BookmarkDeleteRequest(policyId)를 받는 구조라고 가정
-  return request('/api/v1/bookmarks', {
+  return request(`/api/v1/bookmarks/${policyId}`, {
     method: 'DELETE',
-    body: JSON.stringify({
-      policyId,
-    }),
   });
 };
-
 // =================================================================
 // 5. 알림 및 변경 내역 API
 // =================================================================
 
 // 알림 목록 조회 (임의 구현)
 export const getNotificationsAPI = async () => {
-  // 실제 서버가 준비되면: return request('/api/v1/notifications', { method: 'GET' });
-  
-  // 현재는 더미 데이터 반환 (변경 전/후 비교 데이터 포함)
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        success: true,
-        data: [
-          {
-            id: 1,
-            type: 'UPDATE', // UPDATE, INFO 등
-            title: '어르신 공공일자리 지원사업',
-            message: '활동비 지원 금액이 인상되었습니다.',
-            date: '2025-12-05',
-            read: false,
-            // 변경 비교 데이터 (Diff)
-            changes: [
-              {
-                field: '지원 금액',
-                before: '월 최대 27만원',
-                after: '월 최대 30만원'
-              },
-              {
-                field: '모집 인원',
-                before: '50명',
-                after: '70명 (증원)'
-              }
-            ]
-          },
-          {
-            id: 2,
-            type: 'DEADLINE',
-            title: '난방비 긴급 지원',
-            message: '신청 마감이 3일 남았습니다.',
-            date: '2025-12-04',
-            read: true,
-            changes: [] // 변경사항 없음 (단순 알림)
-          }
-        ]
-      });
-    }, 500); // 0.5초 딜레이 시뮬레이션
+  // 백엔드: List<NotificationSummaryDto> 반환
+  const res = await request('/api/v1/notifications', { method: 'GET' });
+
+  // 기본적으로 request()는 { success, status, data, message } 형태를 반환
+  if (!res.success || !Array.isArray(res.data)) {
+    // 에러거나 데이터가 배열이 아닐 경우, 기존 형식 유지하면서 빈 배열
+    return {
+      ...res,
+      data: [],
+    };
+  }
+
+  const mapped = res.data.map((item) => ({
+    id: item.id,
+    type: item.type,                 // CHANGE_POLICY / DEADLINE / INFO ...
+    title: item.title,
+    message: item.messagePreview,    // ✅ messagePreview → FE에서 쓰는 message
+    date: item.createdAt
+      ? String(item.createdAt).slice(0, 10) // '2025-12-11T…' → '2025-12-11'
+      : '',
+    read: item.isRead ?? item.read ?? false, // ✅ isRead → read (혹시 read로 내려와도 대응)
+    changes: [],                      // Summary에는 diff 없음 → 상세 API에서 채울 예정
+    hasReport: item.hasReport ?? false,
+    policyId: item.policyId ?? null,
+    reportId: item.reportId ?? null,
+  }));
+
+  return {
+    ...res,
+    data: mapped,
+  };
+};
+export const getNotificationDetailAPI = async (notificationId) => {
+  const res = await request(`/api/v1/notifications/${notificationId}`, {
+    method: 'GET',
+  });
+
+  if (!res.success || !res.data) {
+    // 에러거나 데이터 없으면 그대로 리턴
+    return res;
+  }
+
+  const item = res.data; // NotificationDetailResponse
+
+  const mapped = {
+    id: item.id,
+    type: item.type,
+    title: item.title,
+    message: item.message,
+    date: item.createdAt ? String(item.createdAt).slice(0, 10) : '',
+    createdAt: item.createdAt ?? null,
+    read: item.isRead ?? item.read ?? false,
+    readAt: item.readAt ?? null,
+    hasReport: !!item.report,
+    report: item.report ?? null, // PolicyChangeReportForUserDto 그대로 전달
+  };
+
+  return {
+    ...res,
+    data: mapped,
+  };
+};
+export const readNotificationAPI = async (notificationId) => {
+  return request(`/api/v1/notifications/${notificationId}/read`, {
+    method: 'POST',
   });
 };
-
 // =================================================================
 // 6. 챗봇 API (New)
 // =================================================================

@@ -2,12 +2,13 @@ package AI_Secretary.DTO.AlarmDto;
 
 public record NotificationSummaryDto(
         Long id,
-        String type,           // "CHANGE_POLICY" 등
+        String type,          // CHANGE_POLICY / DEADLINE / INFO ...
         String title,
-        String messagePreview, // 앞부분 몇 자만 잘라서
+        String messagePreview,
         boolean isRead,
-        String createdAt,      // "2025-12-09 10:30"
+        String createdAt,
         boolean hasReport,
+        Long policyId,// 정책 변경 레포트 연결 여부
         Long reportId
 ) {
 }

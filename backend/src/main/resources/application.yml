@@ -9,7 +9,6 @@ spring:
     username: root
     password: dhtkdwns@&!9
     driver-class-name: com.mysql.cj.jdbc.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate        # 개발 초기엔 update가 편함, 배포 시 none

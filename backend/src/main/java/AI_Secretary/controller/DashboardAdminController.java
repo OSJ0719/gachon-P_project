@@ -19,5 +19,4 @@ public class DashboardAdminController {
     public ResponseEntity<DashboardSummaryResponse> getDashboard() {
         return ResponseEntity.ok(dashboardAdminService.getSummary());
     }
-
 }

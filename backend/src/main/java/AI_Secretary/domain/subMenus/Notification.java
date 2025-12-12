@@ -1,6 +1,5 @@
 package AI_Secretary.domain.subMenus;
 
-import AI_Secretary.domain.publicImplement.BaseTimeEntity;
 import AI_Secretary.domain.user.users;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -51,6 +50,9 @@ public class Notification {
 
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    @Column(name= "policy_id")
+    private long policyId;
 
     @PrePersist
     public void onCreate() {

@@ -1,0 +1,17 @@
+<configuration>
+
+    <!-- 기존 CONSOLE, FILE appender 있으면 그대로 두고, MEMORY만 추가 -->
+    <appender name="MEMORY" class="AI_Secretary.config.InMemoryLogAppender" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="MEMORY" />  <!-- 🔥 여기 중요: 모든 로그를 MEMORY에도 흘려 보냄 -->
+    </root>
+
+</configuration>

@@ -18,7 +18,7 @@ public class ChatController {
 
     private final ChatService chatService;
 
-    @PostMapping("/welfare")
+    @PostMapping("/ask")
     public ResponseEntity<ChatResponse> askWelfare(
             // @AuthenticationPrincipal CustomUserPrincipal user,
             @RequestBody @Valid ChatRequest request

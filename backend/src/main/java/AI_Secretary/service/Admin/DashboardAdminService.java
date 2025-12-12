@@ -5,6 +5,7 @@ import AI_Secretary.DTO.AdminDTO.DashboardLogLineDto;
 import AI_Secretary.DTO.AdminDTO.DashboardSummaryResponse;
 import AI_Secretary.domain.policyData.PolicyChangeLog;
 import AI_Secretary.repository.Alarm.PolicyChangeLogRepository;
+import AI_Secretary.repository.Alarm.PolicyChangeReportRepository;
 import AI_Secretary.repository.search.PolicyDataRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class DashboardAdminService {
 
     private final PolicyDataRepository policyDataRepository;
     private final PolicyChangeLogRepository policyChangeLogRepository;
+    private final PolicyChangeReportRepository policyChangeReportRepository;
     // 🔸 AI 요청수 / 시스템 로그를 DB에 적재하는 구조가 생기면 repo 추가
 
     public DashboardSummaryResponse getSummary() {
@@ -31,7 +33,7 @@ public class DashboardAdminService {
         LocalDateTime endOfToday = today.plusDays(1).atStartOfDay();
 
         long todayReports =
-                policyChangeLogRepository.countByChangedAtBetween(startOfToday, endOfToday);
+                policyChangeReportRepository.countByCreatedAtBetween(startOfToday, endOfToday);
 
         // 서버 상태 / AI 호출 수는 일단 하드코딩 or TODO
         String serverStatus = "정상";   // 나중에 Actuator/Health 체크로 교체

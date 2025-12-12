@@ -8,6 +8,6 @@ public record NotificationDetailResponse(
         boolean isRead,
         String createdAt,
         String readAt,
-        PolicyChangeReportForUserDto report  // null 일 수도 있음
+        PolicyChangeReportForUserDto report  // null 가능
 ) {
 }

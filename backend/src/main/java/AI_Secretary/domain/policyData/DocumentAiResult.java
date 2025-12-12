@@ -31,4 +31,8 @@ public class DocumentAiResult extends BaseTimeEntity {
 
     @Column(name = "qa_template_json", columnDefinition = "TEXT")
     private String qaTemplateJson;
+
+    public void updateSummary(String summaryText) {
+        this.summaryText = summaryText;
+    }
 }

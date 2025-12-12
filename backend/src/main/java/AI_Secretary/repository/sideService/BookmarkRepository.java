@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
+    List<Bookmark> findByPolicy_Id(Long policyId);
 
     List<Bookmark> findByUserIdOrderByCreatedAtDesc(Long userId);
 

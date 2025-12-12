@@ -12,6 +12,7 @@ import AI_Secretary.domain.categories;
 
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder

@@ -6,7 +6,10 @@ import AI_Secretary.DTO.AlarmDto.PolicyChangeReportForUserDto;
 import AI_Secretary.domain.policyData.PolicyData;
 import AI_Secretary.domain.subMenus.Notification;
 import AI_Secretary.domain.subMenus.PolicyChangeReport;
+import AI_Secretary.domain.user.users;
 import AI_Secretary.repository.Alarm.NotificationRepository;
+import AI_Secretary.repository.Alarm.PolicyChangeReportRepository;
+import AI_Secretary.repository.User.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +21,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationService {
     private final NotificationRepository notificationRepository;
-
+    private final UserRepository userRepository;
+    private final PolicyChangeReportRepository policyChangeReportRepository;
     private static final DateTimeFormatter DATE_TIME_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -36,45 +40,50 @@ public class NotificationService {
     }
 
     private NotificationSummaryDto toSummaryDto(Notification n) {
-        String msg = n.getMessage();
-        String preview = null;
-        if (msg != null) {
-            preview = msg.length() > 40 ? msg.substring(0, 40) + "..." : msg;
+        boolean hasReport = (n.getPolicyChangeReport() != null);
+        Long reportId = hasReport ? n.getPolicyChangeReport().getId() : null;
+
+        String preview = n.getMessage();
+        if (preview != null && preview.length() > 40) {
+            preview = preview.substring(0, 40) + "...";
         }
 
         return new NotificationSummaryDto(
                 n.getId(),
-                n.getType().name(),
+                n.getType() != null ? n.getType().name() : null,
                 n.getTitle(),
                 preview,
                 n.isRead(),
                 n.getCreatedAt() != null ? n.getCreatedAt().format(DATE_TIME_FMT) : null,
-                n.getPolicyChangeReport() != null,
-                n.getPolicyChangeReport() != null ? n.getPolicyChangeReport().getId() : null
+                hasReport,
+                n.getPolicyId(),
+                reportId
         );
     }
-
     /**
      * ✅ 알림 상세 조회 (+변경 레포트 포함)
      *    - 여기에서 읽음 처리까지 같이 해버리는 버전
      */
     @Transactional
     public NotificationDetailResponse getNotificationDetail(Long userId, Long notificationId) {
-        Notification n = notificationRepository.findByIdAndUser_Id(notificationId, userId)
+        Notification n = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다. id=" + notificationId));
 
-        // 조회 시 읽음 처리 (원하면 별도 API로 분리 가능)
-        n.markAsRead();
-
-        PolicyChangeReportForUserDto reportDto = null;
-        PolicyChangeReport r = n.getPolicyChangeReport();
-        if (r != null) {
-            reportDto = toReportDto(r);
+        if (!n.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("다른 사용자의 알림에 접근할 수 없습니다.");
         }
+
+        // 읽음 처리
+        if (!n.isRead()) {
+            n.markAsRead(); // or n.setRead(true); n.setReadAt(LocalDateTime.now());
+        }
+
+        PolicyChangeReportForUserDto reportDto =
+                n.getPolicyChangeReport() != null ? toUserReportDto(n.getPolicyChangeReport()) : null;
 
         return new NotificationDetailResponse(
                 n.getId(),
-                n.getType().name(),
+                n.getType() != null ? n.getType().name() : null,
                 n.getTitle(),
                 n.getMessage(),
                 n.isRead(),
@@ -94,18 +103,56 @@ public class NotificationService {
         n.markAsRead();
     }
 
-    private PolicyChangeReportForUserDto toReportDto(PolicyChangeReport r) {
+    private PolicyChangeReportForUserDto toUserReportDto(PolicyChangeReport r) {
         PolicyData p = r.getPolicy();
+
         return new PolicyChangeReportForUserDto(
                 r.getId(),
                 p != null ? p.getId() : null,
                 p != null ? p.getName() : null,
-                r.getTitle(),
                 r.getSummary(),
                 r.getWhatChanged(),
-                r.getWhoAffected(),
                 r.getFromWhen(),
-                r.getActionGuide()
+                r.getActionGuide(),
+                r.getImpactType() != null ? r.getImpactType().name() : null,
+                r.getUserImpactSummary(),
+                r.getBeforeSummary(),
+                r.getAfterSummary()
         );
+    }
+    @Transactional
+    public Notification createNotification(Long userId,
+                                           String type,   // 예: "CHANGE_POLICY"
+                                           String title,
+                                           String message,
+                                           Long reportId) // null 가능
+    {
+        // 1) 유저 엔티티 조회
+        users user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id=" + userId));
+
+        // 2) 타입 enum 변환 (NotificationType 같은 enum을 쓰고 있다고 가정)
+        Notification.NotificationType notificationType = Notification.NotificationType.valueOf(type);
+
+        // 3) 변경 레포트 연결 (선택)
+        PolicyChangeReport report = null;
+        if (reportId != null) {
+            // PolicyChangeReportRepository 를 주입해두고 사용
+            report = policyChangeReportRepository.findById(reportId)
+                    .orElseThrow(() -> new IllegalArgumentException("레포트를 찾을 수 없습니다. id=" + reportId));
+        }
+
+        // 4) 알림 엔티티 생성
+        Notification notification = Notification.builder()
+                .user(user)
+                .type(notificationType)
+                .title(title)
+                .message(message)
+                .read(false)
+                .policyChangeReport(report)
+                .build();
+
+        // createdAt은 BaseTimeEntity @PrePersist 에서 자동 설정될 가능성이 큼
+        return notificationRepository.save(notification);
     }
 }

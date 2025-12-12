@@ -76,6 +76,7 @@ export default function PolicyDetailScreen({ navigation, route }) {
     } else {
       // ❌ 북마크 해제
       const res = await deleteBookmarkAPI(policyId);
+      console.log("res :",policyId);
       if (res.success) {
         setBookmarked(false);
         setData(prev => ({

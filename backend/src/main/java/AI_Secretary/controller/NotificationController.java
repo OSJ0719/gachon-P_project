@@ -15,46 +15,32 @@ import java.util.List;
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
+
     private final NotificationService notificationService;
 
-    /**
-     * ✅ 내 알림 목록 조회
-     *    GET /api/v1/notifications
-     */
     @GetMapping
-    public ResponseEntity<List<NotificationSummaryDto>> getMyNotifications(
+    public ResponseEntity<List<NotificationSummaryDto>> getNotifications(
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-        Long userId = user.getUserId();
-        var list = notificationService.getMyNotifications(userId);
+        var list = notificationService.getMyNotifications(user.getUserId());
         return ResponseEntity.ok(list);
     }
 
-    /**
-     * ✅ 알림 상세 조회 (+읽음 처리)
-     *    GET /api/v1/notifications/{id}
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<NotificationDetailResponse> getDetail(
-            @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long id
+    public ResponseEntity<NotificationDetailResponse> getNotificationDetail(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        Long userId = user.getUserId();
-        var dto = notificationService.getNotificationDetail(userId, id);
+        var dto = notificationService.getNotificationDetail(user.getUserId(), id);
         return ResponseEntity.ok(dto);
     }
 
-    /**
-     * ✅ 읽음 처리만 따로
-     *    POST /api/v1/notifications/{id}/read
-     */
     @PostMapping("/{id}/read")
     public ResponseEntity<Void> markAsRead(
-            @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable Long id
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        Long userId = user.getUserId();
-        notificationService.markAsRead(userId, id);
+        notificationService.getNotificationDetail(user.getUserId(), id); // 안에서 읽음 처리
         return ResponseEntity.ok().build();
     }
 }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -77,4 +78,17 @@ public class PolicyChangeReport {
 
     @Column(name = "after_summary", columnDefinition = "MEDIUMTEXT")
     private String afterSummary;
+
+    @PrePersist
+    public void onPersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (status == null) {
+            status = ReportStatus.DRAFT;
+        }
+        if (reportType == null) {
+            reportType = ReportType.CHANGE_POLICY;
+        }
+    }
 }

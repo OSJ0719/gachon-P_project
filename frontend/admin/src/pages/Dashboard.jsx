@@ -1,21 +1,105 @@
-import React from 'react';
-import { FileText, FileBarChart, Server, RefreshCw } from 'lucide-react';
+import { FileBarChart, FileText, RefreshCw, Server } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { getDashboardSummary, getReports, getServerLogs } from '../api';
+
 
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalPolicies: 0,
+    dailyReports: 0,       // ← todayReports를 여기에 매핑
+    serverStatus: 'CHECKING',
+    aiApiCount: 0          // ← todayAiApiCalls를 여기에 매핑
+  });
+
+  const [recentLogs, setRecentLogs] = useState([]);
+  const [serverLogs, setServerLogs] = useState([]);
+
+  useEffect(() => {
+  // 1. 대시보드 요약 정보 조회
+  getDashboardSummary().then(res => {
+    // 🌟 수정: res.success 확인 및 res.data 사용
+    if (!res || !res.success || !res.data) return; 
+
+    const data = res.data; // 데이터를 별도 변수에 할당하여 사용
+    
+    // 백엔드: totalPolicies, todayReports, serverStatus, todayAiApiCalls
+    setStats({
+      totalPolicies: Number(data.totalPolicies) || 0,
+      dailyReports: Number(data.todayReports) || 0,
+      serverStatus: data.serverStatus || 'UNKNOWN',
+      aiApiCount: Number(data.todayAiApiCalls) || 0,
+    });
+  });
+
+ getReports().then(res => {
+   if (!res || !res.success || !Array.isArray(res.data)) return;
+   const data = res.data;
+
+   const mapped = data.slice(0, 3).map(r => ({
+     date: r.createdAt,       // AdminPolicyChangeReportSummaryDto에 있는 필드
+     title: r.title,
+     status: r.status,        // DRAFT / APPROVED 등 그대로 노출
+     user: '관리자',          // 나중에 작성자 필드 생기면 교체
+   }));
+
+   setRecentLogs(mapped);
+ });
+    // 3. 실시간 서버 로그
+      // 3. 실시간 서버 로그
+  getServerLogs().then(res => {
+    console.log('[ServerLogs] response:', res); // 한 번 찍어보기용
+
+    if (!res || !res.success || !res.data) return;
+
+    const data = res.data;
+    // 백엔드: { logs: [ {time, level, message}, ... ] }
+    const logs = Array.isArray(data)
+      ? data
+      : Array.isArray(data.logs)
+        ? data.logs
+        : [];
+
+    setServerLogs(logs);
+  });
+}, []);
+
   return (
     <div>
-      <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginBottom: '24px' }}>대시보드</h2>
+      <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b', marginBottom: '24px' }}>
+        대시보드
+      </h2>
       
-      {/* 1. 상단 카드 4개 */}
+      {/* 상단 카드 4개 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
-        <StatCard icon={<FileText size={24} color="#3b82f6" />} bg="#eff6ff" title="총 등록 사업" value="1,240" />
-        <StatCard icon={<FileBarChart size={24} color="#a855f7" />} bg="#f3e8ff" title="오늘 수집된 리포트" value="12" />
-        <StatCard icon={<Server size={24} color="#22c55e" />} bg="#dcfce7" title="서버 상태" value="정상" color="#22c55e" />
-        <StatCard icon={<RefreshCw size={24} color="#f97316" />} bg="#ffedd5" title="AI API 요청 수" value="8,542" />
+        <StatCard
+          icon={<FileText size={24} color="#3b82f6" />}
+          bg="#eff6ff"
+          title="총 등록 사업"
+          value={stats.totalPolicies}
+        />
+        <StatCard
+          icon={<FileBarChart size={24} color="#a855f7" />}
+          bg="#f3e8ff"
+          title="오늘 수집된 리포트"
+          value={stats.dailyReports}
+        />
+        <StatCard
+          icon={<Server size={24} color="#22c55e" />}
+          bg="#dcfce7"
+          title="서버 상태"
+          value={stats.serverStatus}
+          color={stats.serverStatus === '정상' ? '#22c55e' : '#ea580c'}
+        />
+        <StatCard
+          icon={<RefreshCw size={24} color="#f97316" />}
+          bg="#ffedd5"
+          title="AI API 요청 수"
+          value={stats.aiApiCount}
+        />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-        {/* 2. 최근 변경 이력 리포트 테이블 */}
+        {/* 최근 리포트 */}
         <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>최근 변경 이력 리포트</h3>
@@ -31,22 +115,82 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              <ReportRow date="2025-11-28" title="2025년 동절기 에너지바우처 지침 변경" status="검토필요" user="AI Bot" />
-              <ReportRow date="2025-11-28" title="노인 일자리 사업 모집 공고 업데이트" status="완료" user="관리자A" />
-              <ReportRow date="2025-11-27" title="기초연금 수급액 인상안 발표" status="완료" user="관리자B" />
+              {recentLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ padding: '16px 0', textAlign: 'center', color: '#94a3b8' }}>
+                    최근 변경 이력이 없습니다.
+                  </td>
+                </tr>
+              ) : (
+                recentLogs.map((log, idx) => (
+                  <ReportRow
+                    key={idx}
+                    date={log.date}
+                    title={log.title}
+                    status={log.status}
+                    user={log.user}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* 3. 실시간 서버 로그 */}
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+        {/* 서버 로그 */}
+        <div
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '400px',
+          }}
+        >
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>실시간 서버 로그</h3>
-          <div style={{ flex: 1, backgroundColor: '#0f172a', borderRadius: '8px', padding: '16px', color: '#22c55e', fontSize: '12px', fontFamily: 'monospace', lineHeight: '1.6' }}>
-            <div>[INFO] 14:20:01 Fetch API Called - /api/policy/update</div>
-            <div style={{ color: '#3b82f6' }}>[DEBUG] 14:20:02 AI Summary Generation Started</div>
-            <div>[INFO] 14:20:05 AI Response Success (Latency: 300ms)</div>
-            <div style={{ color: '#eab308' }}>[WARN] 14:21:00 High Memory Usage Detected (78%)</div>
-            <div>[INFO] 14:22:30 Batch Job Completed</div>
+          <div
+            style={{
+              flex: 1,
+              backgroundColor: '#0f172a',
+              borderRadius: '8px',
+              padding: '16px',
+              color: '#22c55e',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              lineHeight: '1.6',
+              overflowY: 'auto',
+            }}
+          >
+            {serverLogs.length === 0 ? (
+              <div style={{ color: '#64748b' }}>표시할 로그가 없습니다.</div>
+            ) : (
+                serverLogs.map((log, idx) => {
+    // 문자열로 들어오더라도 방어 코드
+                if (typeof log === 'string') {
+                  return (
+                    <div key={idx} style={{ marginBottom: '4px' }}>
+                      {log}
+                    </div>
+                  );
+                }
+
+                const levelColor =
+                  log.level === 'ERROR' ? '#f97373'
+                  : log.level === 'WARN' ? '#facc15'
+                  : '#22c55e';
+
+                return (
+                  <div key={idx} style={{ marginBottom: '4px' }}>
+                    <span style={{ color: '#9ca3af' }}>[{log.time}]</span>{' '}
+                    <span style={{ color: levelColor, fontWeight: 'bold' }}>
+                      [{log.level}]
+                    </span>{' '}
+                    <span>{log.message}</span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
@@ -54,9 +198,41 @@ export default function Dashboard() {
   );
 }
 
+/** 백엔드 changeType → 화면에 보여줄 한글 라벨 */
+function mapChangeTypeToLabel(changeType) {
+  if (!changeType) return '기타';
+  const upper = String(changeType).toUpperCase();
+  if (upper === 'NEW') return '신규';
+  if (upper === 'UPDATE') return '변경';
+  if (upper === 'DELETE') return '삭제';
+  return changeType;
+}
+
 const StatCard = ({ icon, bg, title, value, color = '#1e293b' }) => (
-  <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-    <div style={{ width: '48px', height: '48px', borderRadius: '24px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
+  <div
+    style={{
+      backgroundColor: 'white',
+      borderRadius: '12px',
+      padding: '24px',
+      border: '1px solid #e2e8f0',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+    }}
+  >
+    <div
+      style={{
+        width: '48px',
+        height: '48px',
+        borderRadius: '24px',
+        backgroundColor: bg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {icon}
+    </div>
     <div>
       <div style={{ fontSize: '14px', color: '#64748b' }}>{title}</div>
       <div style={{ fontSize: '24px', fontWeight: 'bold', color }}>{value}</div>
@@ -71,11 +247,18 @@ const ReportRow = ({ date, title, status, user }) => {
       <td style={{ padding: '12px 0', color: '#64748b' }}>{date}</td>
       <td style={{ padding: '12px 0', fontWeight: '500' }}>{title}</td>
       <td style={{ textAlign: 'center' }}>
-        <span style={{ 
-          backgroundColor: isPending ? '#fef3c7' : '#dcfce7', 
-          color: isPending ? '#d97706' : '#16a34a',
-          padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' 
-        }}>{status}</span>
+        <span
+          style={{
+            backgroundColor: isPending ? '#fef3c7' : '#dcfce7',
+            color: isPending ? '#d97706' : '#16a34a',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+          }}
+        >
+          {status}
+        </span>
       </td>
       <td style={{ textAlign: 'center', color: '#64748b' }}>{user}</td>
     </tr>
