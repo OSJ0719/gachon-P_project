@@ -157,8 +157,16 @@ export const updateUserProfileAPI = async (data) => {
 // =================================================================
 
 // 홈 화면 요약 정보 (날씨, 일정, 추천 정책)
-export const getHomeSummaryAPI = async () => {
-  return request('/api/v1/home/summary', { method: 'GET' });
+// lat, lon 파라미터를 받아 쿼리 스트링으로 전달하도록 변경
+export const getHomeSummaryAPI = async (lat, lon) => {
+  let url = '/api/v1/home/summary';
+  
+  // 위도, 경도 정보가 있다면 쿼리 파라미터로 추가
+  if (lat && lon) {
+    url += `?lat=${lat}&lon=${lon}`;
+  }
+
+  return request(url, { method: 'GET' });
 };
 
 // 사용자 기반 추천 정책 조회 (Updated)

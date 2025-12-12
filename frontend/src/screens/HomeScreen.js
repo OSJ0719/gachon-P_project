@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Menu, Search, Sun, MapPin, Bell, CloudRain, Cloud, Bookmark, ChevronRight } from 'lucide-react-native';
+import * as Location from 'expo-location';
 import { COLORS } from '../theme';
 import { getHomeSummaryAPI, getBookmarksAPI } from '../api';
 import { useTheme } from '../context/ThemeContext';
 import SideMenu from '../components/SideMenu';
 import BottomNavigation from '../components/BottomNavigation';
+
 export default function HomeScreen({ navigation, route }) {
   const { scale } = useTheme();
   const user = route.params?.user || { name: '사용자' };
@@ -19,14 +21,16 @@ export default function HomeScreen({ navigation, route }) {
   const [schedules, setSchedules] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
 
-const mapBookmarkDtoToUI = (dto) => ({
-  id: dto.policy.id,                         // 정책 ID
-  bookmarkId: dto.id,                        // 필요하면 별도 보관
-  category: dto.policy.mainCategoryName,
-  title: dto.policy.name,
-  date: dto.createdAt?.substring(0, 10),     // "YYYY-MM-DD"
-});
+  // 위치 정보 상태
+  const [location, setLocation] = useState(null);
 
+  const mapBookmarkDtoToUI = (dto) => ({
+    id: dto.policy.id,                         // 정책 ID
+    bookmarkId: dto.id,                        // 필요하면 별도 보관
+    category: dto.policy.mainCategoryName,
+    title: dto.policy.name,
+    date: dto.createdAt?.substring(0, 10),     // "YYYY-MM-DD"
+  });
 
   // 날짜 포맷 헬퍼 (예: 2025-12-05 -> 12월 5일)
   const formatUserDate = (dateStr) => {
@@ -53,10 +57,13 @@ const mapBookmarkDtoToUI = (dto) => ({
     };
     return map[condition] || '맑음';
   };
-  const fetchData = async () => {
+
+  // fetchData가 lat, lon을 받을 수 있도록 파라미터 추가
+  const fetchData = async (lat = null, lon = null) => {
     try {
       // 1. 홈 화면 요약 정보 (날씨 + 오늘의 일정 + 추천 정책)
-      const summaryRes = await getHomeSummaryAPI();
+      // 위치 정보가 있으면 API에 함께 전달
+      const summaryRes = await getHomeSummaryAPI(lat, lon);
       
       if (summaryRes.success && summaryRes.data) {
         const data = summaryRes.data;
@@ -110,9 +117,39 @@ const mapBookmarkDtoToUI = (dto) => ({
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await fetchData();
+    // 새로고침 시에는 저장된 위치가 있다면 그 위치로, 없다면 기본값(null)으로 호출
+    const lat = location ? location.latitude : null;
+    const lon = location ? location.longitude : null;
+    await fetchData(lat, lon);
     setRefreshing(false);
-  }, []);
+  }, [location]); // location 의존성 추가
+
+  // 날씨 카드 클릭 시 위치 정보(GPS) 가져오기 핸들러
+  const handleWeatherClick = async () => {
+    try {
+      // 1. 위치 정보 접근 권한 요청
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('알림', '위치 정보 접근 권한이 필요합니다.');
+        return;
+      }
+
+      // 2. 현재 위치 가져오기 (정확도 옵션 등은 필요에 따라 조정 가능)
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = currentLocation.coords;
+
+      // 3. 상태 업데이트 및 API 재호출
+      setLocation({ latitude, longitude });
+      
+      // 사용자 피드백 및 데이터 갱신
+      Alert.alert('위치 확인', '현재 계신 곳의 날씨 정보를 가져옵니다.');
+      await fetchData(latitude, longitude);
+
+    } catch (error) {
+      console.error('위치 정보 가져오기 실패:', error);
+      Alert.alert('오류', '위치 정보를 가져올 수 없습니다.\nGPS 설정을 확인해주세요.');
+    }
+  };
 
   const renderWeatherIcon = (status) => {
     if (status?.includes('비')) return <CloudRain size={32 * scale} color="white" />;
@@ -137,7 +174,6 @@ const mapBookmarkDtoToUI = (dto) => ({
             onPress={() => navigation.navigate('Notification')}
           >
             <Bell size={28} color="white" />
-            {/* 알림이 있다는 표시 - 실제로는 API 결과에 따라 제어 */}
             <View style={{
               position: 'absolute', top: 5, right: 3, 
               width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.error, 
@@ -166,7 +202,11 @@ const mapBookmarkDtoToUI = (dto) => ({
         
         {/* 날씨 카드 */}
         {weatherData ? (
-          <View style={styles.card}>
+          <TouchableOpacity 
+            style={styles.card} 
+            activeOpacity={0.8}
+            onPress={handleWeatherClick}
+          >
             <View style={styles.weatherHeader}>
               <View>
                 <Text style={[styles.dateText, { fontSize: 16 * scale }]}>{weatherData.date}</Text>
@@ -183,13 +223,17 @@ const mapBookmarkDtoToUI = (dto) => ({
               </View>
               <View>
                 <Text style={[styles.weatherStatus, { fontSize: 22 * scale }]}>{weatherData.weather.status}</Text>
-                <Text style={[styles.locationText, { fontSize: 16 * scale }]}>{weatherData.weather.location}</Text>
+                <Text style={[styles.locationText, { fontSize: 16 * scale }]}>
+                  {weatherData.weather.location}
+                  {/* 위치 아이콘 추가 */}
+                  <MapPin size={14 * scale} color={COLORS.textDim} style={{ marginLeft: 4 }} />
+                </Text>
               </View>
             </View>
             <View style={styles.commentBox}>
               <Text style={[styles.commentText, { fontSize: 16 * scale }]}>{weatherData.comment}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ) : (
           <View style={[styles.card, { alignItems: 'center', padding: 30 }]}>
             <Text style={{ color: COLORS.textDim }}>날씨 정보를 불러오는 중입니다...</Text>
@@ -292,7 +336,7 @@ const styles = StyleSheet.create({
   weatherBody: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   weatherIconBox: { width: 64, height: 64, borderRadius: 20, backgroundColor: COLORS.secondary, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   weatherStatus: { fontWeight: 'bold', color: '#111827', marginBottom: 4 },
-  locationText: { color: COLORS.textDim },
+  locationText: { color: COLORS.textDim, flexDirection: 'row', alignItems: 'center' },
   commentBox: { backgroundColor: '#fff7ed', padding: 16, borderRadius: 16 },
   commentText: { color: '#9a3412', fontWeight: 'bold', lineHeight: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 10, paddingHorizontal: 4 },
