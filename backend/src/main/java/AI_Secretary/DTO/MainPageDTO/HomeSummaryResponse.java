@@ -1,6 +1,7 @@
 package AI_Secretary.DTO.MainPageDTO;
 
 import AI_Secretary.DTO.MainPageDTO.SideMenuDTO.CalendarEventDto;
+import AI_Secretary.DTO.MainPageDTO.Weather.WeatherSummaryDto;
 import AI_Secretary.DTO.SearchDTO.PolicySummaryDto;
 
 import java.util.List;

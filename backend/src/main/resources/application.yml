@@ -25,9 +25,16 @@ spring:
       WRITE_DATES_AS_TIMESTAMPS: false
   ai:
     server:
-      base-url: http://127.0.0.1:8000
+      base-url: https://cherlyn-unforeboded-unmarvellously.ngrok-free.dev
+      timeout-ms: 15000
 
 security:
   jwt:
     secret: "cWhA8zvDKu3lHvUEAjb6mzpr5xO55uDtaJ6SNeOXSsx"
     access-token-validity-ms: 3600000   # 1 hour
+kma:
+  weather:
+    base-url: https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0
+    service-key: a56696519f570c142f52fbcf25f09fe4ed4a4298943100eb63cd687ddfc687ba
+    timeout-ms: 3000
+    enabled: true

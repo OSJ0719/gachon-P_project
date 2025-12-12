@@ -5,20 +5,33 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
 
 @Configuration
 public class AiServerConfig {
 
-    // application.yml에서 가져올 값, 없으면 기본값으로 FastAPI 서버 로컬 주소 사용
-    @Value("${ai.server.base-url:http://127.0.0.1:8000}")
+    @Value("${ai.server.base-url:https://cherlyn-unforeboded-unmarvellously.ngrok-free.dev}")
     private String aiBaseUrl;
+
+    @Value("${ai.server.timeout-ms:15000}")
+    private long timeoutMs;
 
     @Bean
     public WebClient aiWebClient(WebClient.Builder builder) {
+        System.out.println("### AI BASE URL = " + aiBaseUrl);
         return builder
-                .baseUrl(aiBaseUrl) // 반드시 http:// 로 시작하는 풀 URL이어야 함
+                .baseUrl(aiBaseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .clientConnector(
+                        new ReactorClientHttpConnector(
+                                HttpClient.create()
+                                        .responseTimeout(Duration.ofMillis(timeoutMs))
+                        )
+                )
                 .build();
     }
 }

@@ -1,6 +1,6 @@
 package AI_Secretary.client;
 
-import AI_Secretary.DTO.MainPageDTO.WeatherSummaryDto;
+import AI_Secretary.DTO.MainPageDTO.Weather.WeatherSummaryDto;
 
 import java.time.LocalDate;
 

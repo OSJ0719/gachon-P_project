@@ -3,7 +3,7 @@ package AI_Secretary.service.Menu;
 import AI_Secretary.DTO.MainPageDTO.SideMenuDTO.CalendarEventDto;
 import AI_Secretary.DTO.MainPageDTO.HomeSummaryResponse;
 import AI_Secretary.DTO.SearchDTO.PolicySummaryDto;
-import AI_Secretary.DTO.MainPageDTO.WeatherSummaryDto;
+import AI_Secretary.DTO.MainPageDTO.Weather.WeatherSummaryDto;
 import AI_Secretary.Security.CustomUserDetails;
 import AI_Secretary.domain.subMenus.CalendarEvent;
 import AI_Secretary.domain.user.UserProfile;
@@ -28,11 +28,13 @@ public class HomeService {
     private final WeatherService weatherService;
     private final CalendarEventRepository calendarEventRepository;
     private final PolicyQueryService policyQueryService;
+    private static final String DEFAULT_REGION_CODE = "55_127";   // 서울 중구 격자 예시
+    private static final String DEFAULT_REGION_NAME = "서울중구";
 
     private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
     @Transactional
-    public HomeSummaryResponse getHomeSummary(CustomUserDetails userDetails) {
+    public HomeSummaryResponse getHomeSummary(CustomUserDetails userDetails, Double lat, Double lon) {
 
         // 0) Security에서 꺼낸 엔티티는 "id만" 쓰고, 진짜 엔티티는 다시 조회
         Long userId = userDetails.getUser().getId();
@@ -44,14 +46,21 @@ public class HomeService {
         UserProfile profile = userProfileRepository.findById(userId)
                 .orElse(null);
 
-        String regionCode = profile != null ? profile.getRegionCode() : null;
-        String regionName = profile != null ? profile.getRegionName() : null;
+        String regionCode =
+                (profile != null && profile.getRegionCode() != null && !profile.getRegionCode().isBlank())
+                        ? profile.getRegionCode()
+                        : DEFAULT_REGION_CODE;
+
+        String regionName =
+                (profile != null && profile.getRegionName() != null && !profile.getRegionName().isBlank())
+                        ? profile.getRegionName()
+                        : DEFAULT_REGION_NAME;
         Integer age      = profile != null ? profile.getAge()        : null;
 
         LocalDate today = LocalDate.now(KOREA_ZONE);
 
         // 1) 오늘 날씨 (users 통째로 넘기지 말고, 필요한 정보만 넘긴다)
-        WeatherSummaryDto weather = weatherService.getTodayWeather(regionCode, regionName);
+        WeatherSummaryDto weather = weatherService.getTodayWeatherWithLocation(lat,lon,regionCode,regionName);
 
         // 2) 오늘 일정
         List<CalendarEvent> events = calendarEventRepository
