@@ -1,21 +1,19 @@
 import React, { useEffect, useState } from 'react';
-<<<<<<< HEAD
 import { getServerLogs, getServerMetrics } from '../api';
-
 export default function ServerPage() {
   const [metrics, setMetrics] = useState({
     api: { status: '-', uptime: '-' },
     ai: { status: '-', latencyMs: 0 },
     db: { status: '-', active: 0, max: 0 },
   });
-
   const [logs, setLogs] = useState([]);
 
   const loadMetricsAndLogs = async () => {
     // 1) 서버 메트릭
     const metricsRes = await getServerMetrics();
     if (metricsRes && metricsRes.success && metricsRes.data) {
-      const data = metricsRes.data; // { api, ai, db }
+      const data = metricsRes.data;
+      // { api, ai, db }
 
       setMetrics({
         api: {
@@ -48,7 +46,6 @@ export default function ServerPage() {
       setLogs(list);
     }
   };
-
   useEffect(() => {
     loadMetricsAndLogs();
   }, []);
@@ -68,23 +65,6 @@ export default function ServerPage() {
     URL.revokeObjectURL(url);
   };
 
-=======
-import { getServerMetrics, getServerLogs } from '../api';
-
-export default function ServerPage() {
-  const [metrics, setMetrics] = useState({
-    apiUptime: '-',
-    aiLatency: '-',
-    dbConnections: '-'
-  });
-  const [logs, setLogs] = useState([]);
-
-  useEffect(() => {
-    getServerMetrics().then(res => { if(res) setMetrics(res); });
-    getServerLogs().then(res => { if(Array.isArray(res)) setLogs(res); });
-  }, []);
-
->>>>>>> ca6d91913bd473678d8f7e37f37286ee52ffcb6b
   return (
     <div>
       <h2
@@ -106,7 +86,6 @@ export default function ServerPage() {
         }}
       >
         {/* 1. 운영 상태 점검 */}
-<<<<<<< HEAD
         <div
           style={{
             backgroundColor: 'white',
@@ -117,7 +96,8 @@ export default function ServerPage() {
         >
           <h3
             style={{
-              fontSize: '18px',
+              fontSize: 
+                '18px',
               fontWeight: 'bold',
               marginBottom: '24px',
             }}
@@ -137,14 +117,6 @@ export default function ServerPage() {
             title="Database (MySQL)"
             desc={`Connections: ${metrics.db.active} / ${metrics.db.max}`}
           />
-=======
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '24px' }}>운영 상태 점검</h3>
-          
-          <StatusItem title="Spring Boot API Server" desc={`Uptime: ${metrics.apiUptime}`} />
-          <StatusItem title="AI Model Server (Gemma)" desc={`Latency: ${metrics.aiLatency}`} />
-          <StatusItem title="Database (PostgreSQL)" desc={`Connections: ${metrics.dbConnections}`} />
->>>>>>> ca6d91913bd473678d8f7e37f37286ee52ffcb6b
         </div>
 
         {/* 2. 시스템 로그 */}
@@ -206,7 +178,6 @@ export default function ServerPage() {
               </button>
             </div>
           </div>
-<<<<<<< HEAD
 
           <div
             style={{
@@ -261,15 +232,6 @@ export default function ServerPage() {
                 );
               })
             )}
-=======
-          
-          <div style={{ flex: 1, backgroundColor: '#0f172a', borderRadius: '8px', padding: '16px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.8' }}>
-            {logs.map((log, idx) => (
-              <div key={idx} style={{ color: log.includes('[ERROR]') ? '#ef4444' : log.includes('[WARN]') ? '#eab308' : '#22c55e' }}>
-                {log}
-              </div>
-            ))}
->>>>>>> ca6d91913bd473678d8f7e37f37286ee52ffcb6b
           </div>
         </div>
       </div>
