@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import * as Location from 'expo-location';
 import { Bell, Bookmark, ChevronRight, Cloud, CloudRain, MapPin, Menu, Search, Sun } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -8,6 +9,18 @@ import BottomNavigation from '../components/BottomNavigation';
 import SideMenu from '../components/SideMenu';
 import { useTheme } from '../context/ThemeContext';
 import { COLORS } from '../theme';
+=======
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, RefreshControl, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Menu, Search, Sun, MapPin, Bell, CloudRain, Cloud, Bookmark, ChevronRight } from 'lucide-react-native';
+import * as Location from 'expo-location';
+import { COLORS } from '../theme';
+import { getHomeSummaryAPI, getBookmarksAPI } from '../api';
+import { useTheme } from '../context/ThemeContext';
+import SideMenu from '../components/SideMenu';
+import BottomNavigation from '../components/BottomNavigation';
+>>>>>>> f659a7282831d5ebc06e4653ee1806358dba3f01
 
 export default function HomeScreen({ navigation, route }) {
   const { scale } = useTheme();
