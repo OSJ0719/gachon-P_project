@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import { Edit, Plus, Search, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { deletePolicy, getPolicies } from '../api';
+=======
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { getPolicies, deletePolicy } from '../api';
+>>>>>>> ca6d91913bd473678d8f7e37f37286ee52ffcb6b
 
 export default function PolicyPage() {
   const [policies, setPolicies] = useState([]);
@@ -8,6 +14,7 @@ export default function PolicyPage() {
   const [category, setCategory] = useState('전체 카테고리');
 
   // 데이터 로드 함수
+<<<<<<< HEAD
 const loadData = async () => {
     // 🌟 1. 파라미터를 하나의 객체로 묶습니다.
     const params = {
@@ -28,11 +35,23 @@ const loadData = async () => {
     console.error("정책 데이터 로드 실패 또는 데이터 구조 불일치", res);
   }
 };
+=======
+  const loadData = async () => {
+    const res = await getPolicies(keyword, category === '전체 카테고리' ? '' : category);
+    if (Array.isArray(res)) {
+      setPolicies(res);
+    }
+  };
+>>>>>>> ca6d91913bd473678d8f7e37f37286ee52ffcb6b
 
   // 초기 로드 및 검색조건 변경 시 실행
   useEffect(() => {
     loadData();
+<<<<<<< HEAD
   }, [category,keyword]); // 카테고리 변경 시 즉시 조회
+=======
+  }, [category]); // 카테고리 변경 시 즉시 조회
+>>>>>>> ca6d91913bd473678d8f7e37f37286ee52ffcb6b
 
   const handleSearch = (e) => {
     if (e.key === 'Enter') loadData(); // 엔터 키 입력 시 조회
@@ -108,6 +127,7 @@ const loadData = async () => {
                 policies.map((p) => (
                   <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9', fontSize: '15px' }}>
                     <td style={{ padding: '16px', color: '#64748b' }}>#{p.id}</td>
+<<<<<<< HEAD
                     {/* 1. 사업명: p.title -> p.name 으로 변경 */}
                     <td style={{ padding: '16px', fontWeight: '500', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</td>
                     {/* 2. 담당 기관: p.agency -> p.provider 로 변경 */}
@@ -115,6 +135,12 @@ const loadData = async () => {
                     {/* 3. 등록일: p.date -> p.lastModifiedAt 로 변경 (또는 실제 등록일 필드 사용) */}
                     <td style={{ padding: '16px', textAlign: 'center', color: '#64748b', whiteSpace: 'nowrap' }}>{p.lastModifiedAt}</td>
                     <td style={{ padding: '16px', textAlign: 'center' }}>
+=======
+                    <td style={{ padding: '16px', fontWeight: '500', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</td>
+                    <td style={{ padding: '16px', textAlign: 'center', color: '#1e293b', whiteSpace: 'nowrap' }}>{p.agency}</td>
+                    <td style={{ padding: '16px', textAlign: 'center', color: '#64748b', whiteSpace: 'nowrap' }}>{p.date}</td>
+                    <td style={{ padding: '16px', textAlign: 'center' }}>
+>>>>>>> ca6d91913bd473678d8f7e37f37286ee52ffcb6b
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                         <button style={{ background: 'none', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#64748b', display: 'flex' }}><Edit size={16} /></button>
                         <button onClick={() => handleDelete(p.id)} style={{ background: 'none', border: '1px solid #fee2e2', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#ef4444', display: 'flex' }}><Trash2 size={16} /></button>
