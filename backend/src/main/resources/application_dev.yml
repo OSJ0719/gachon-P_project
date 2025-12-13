@@ -5,14 +5,14 @@ spring:
   profiles:
     active: local
   datasource:
-    url: jdbc:mysql://localhost:3306/aid_devops?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: p-pro_test
+    url: jdbc:mysql://127.0.0.1:3306/aid_devops?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
     password: dhtkdwns@&!9
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update        # 개발 초기엔 update가 편함, 배포 시 none
+      ddl-auto: validate        # 개발 초기엔 update가 편함, 배포 시 none
     show-sql: true
     properties:
       hibernate:
@@ -24,8 +24,18 @@ spring:
     time-zone: Asia/Seoul
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+  ai:
+    server:
+      base-url: https://cherlyn-unforeboded-unmarvellously.ngrok-free.dev
+      timeout-ms: 15000
 
 security:
   jwt:
     secret: "cWhA8zvDKu3lHvUEAjb6mzpr5xO55uDtaJ6SNeOXSsx"
     access-token-validity-ms: 3600000   # 1 hour
+kma:
+  weather:
+    base-url: https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0
+    service-key: a56696519f570c142f52fbcf25f09fe4ed4a4298943100eb63cd687ddfc687ba
+    timeout-ms: 3000
+    enabled: true

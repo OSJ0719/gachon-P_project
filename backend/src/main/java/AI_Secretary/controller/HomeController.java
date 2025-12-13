@@ -2,7 +2,7 @@ package AI_Secretary.controller;
 
 import AI_Secretary.DTO.MainPageDTO.HomeSummaryResponse;
 import AI_Secretary.Security.CustomUserDetails;
-import AI_Secretary.service.Menu.HomeService;
+import AI_Secretary.service.HomeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

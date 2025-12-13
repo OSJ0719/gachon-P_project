@@ -51,9 +51,6 @@ public class Notification {
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
-    @Column(name= "policy_id")
-    private long policyId;
-
     @PrePersist
     public void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();

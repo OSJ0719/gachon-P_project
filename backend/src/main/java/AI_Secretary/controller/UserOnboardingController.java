@@ -2,7 +2,7 @@ package AI_Secretary.controller;
 
 import AI_Secretary.DTO.MainPageDTO.UpdateInterestsRequest;
 import AI_Secretary.Security.CustomUserDetails;
-import AI_Secretary.service.User.UserOnboardingService;
+import AI_Secretary.service.UserOnboardingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

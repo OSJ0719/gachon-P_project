@@ -2,20 +2,30 @@ package AI_Secretary.controller.Admin;
 
 import AI_Secretary.DTO.AdminDTO.AdminPolicyChangeReportDto;
 import AI_Secretary.DTO.AdminDTO.AdminPolicyChangeReportSummaryDto;
+import AI_Secretary.DTO.AiDTO.ManualChangeLogDraftRequest;
+import AI_Secretary.domain.policyData.PolicyChangeLog;
+import AI_Secretary.domain.policyData.PolicyData;
+import AI_Secretary.repository.Alarm.PolicyChangeLogRepository;
+import AI_Secretary.repository.search.PolicyDataRepository;
+import AI_Secretary.service.Admin.AdminPolicyManagementService;
 import AI_Secretary.service.Admin.PolicyChangeReportService;
+import AI_Secretary.service.Ai.AiChangeReportService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin/reports")
 @RequiredArgsConstructor
 public class AdminPolicyChangeReportController {
 
     private final PolicyChangeReportService policyChangeReportService;
-
+    private final AiChangeReportService aiChangeReportService;
+    private final PolicyDataRepository policyDataRepository;
     /**
      * ✅ 관리자 - 정책 변경 보고서 목록
      *   - 전체 or 특정 정책 기준 필터
@@ -90,4 +100,31 @@ public class AdminPolicyChangeReportController {
         policyChangeReportService.delete(reportId);
         return ResponseEntity.ok().build();
     }
+    @PostMapping("/auto-draft/manual")
+    public ResponseEntity<AdminPolicyChangeReportDto> createDraftFromManualChange(
+            @RequestBody ManualChangeLogDraftRequest request
+    ) {
+        log.info("### [auto-draft/manual] request={}", request);
+
+        PolicyData policy = policyDataRepository.findById(request.policyId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "정책을 찾을 수 없습니다. id=" + request.policyId()
+                ));
+
+        // 1) 수동 변경 로그 생성
+        PolicyChangeLog log = aiChangeReportService.createManualLogForDemo(
+                policy,
+                request.changeType(),
+                request.beforeText(),
+                request.afterText(),
+                request.adminNote()
+        );
+
+        // 2) 기존 로직 재사용: 로그 기반 AI 초안 생성
+        AdminPolicyChangeReportDto draft =
+                policyChangeReportService.createDraftFromChangeLog(log.getId());
+
+        return ResponseEntity.ok(draft);
+    }
 }
+

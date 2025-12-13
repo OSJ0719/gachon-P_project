@@ -41,7 +41,13 @@ public class NotificationService {
 
     private NotificationSummaryDto toSummaryDto(Notification n) {
         boolean hasReport = (n.getPolicyChangeReport() != null);
+        var report = n.getPolicyChangeReport();
         Long reportId = hasReport ? n.getPolicyChangeReport().getId() : null;
+        Long policyId = null;
+        if (report != null && report.getPolicy() != null) {
+            policyId = report.getPolicy().getId();
+        }
+
 
         String preview = n.getMessage();
         if (preview != null && preview.length() > 40) {
@@ -56,7 +62,7 @@ public class NotificationService {
                 n.isRead(),
                 n.getCreatedAt() != null ? n.getCreatedAt().format(DATE_TIME_FMT) : null,
                 hasReport,
-                n.getPolicyId(),
+                policyId,
                 reportId
         );
     }

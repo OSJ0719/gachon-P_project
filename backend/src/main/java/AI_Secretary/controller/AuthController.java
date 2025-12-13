@@ -6,7 +6,7 @@ import AI_Secretary.DTO.AuthDTO.LoginRequest;
 import AI_Secretary.DTO.AuthDTO.SignupRequest;
 import AI_Secretary.Security.CustomUserDetails;
 import AI_Secretary.domain.user.users;
-import AI_Secretary.service.Menu.AuthService;
+import AI_Secretary.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
