@@ -1,17 +1,15 @@
 server:
-  port: 8080
+  port: 60019
 
 spring:
-  profiles:
-    active: local
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/aid_devops?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root
-    password: dhtkdwns@&!9
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mariadb://localhost:3306/db25312
+    username: dbid253
+    password: dbpass253
+    driver-class-name: org.mariadb.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: validate        # 개발 초기엔 update가 편함, 배포 시 none
+      ddl-auto: update        # 개발 초기엔 update가 편함, 배포 시 none
     show-sql: true
     properties:
       hibernate:

@@ -20,34 +20,30 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@EnableMethodSecurity
 @RequiredArgsConstructor
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        // 중요한 설정
         config.setAllowCredentials(true);
 
-        // 프론트엔드 포트(8081)를 명시적으로 허용
+        // 로컬 개발용 + 학과 서버 도메인 둘 다 허용
         config.addAllowedOrigin("http://localhost:8081");
+        config.addAllowedOrigin("http://localhost:5173");              // Vite 쓰면
+        config.addAllowedOrigin("http://ceprj.gachon.ac.kr:60019");    // 학과 서버
 
-        // 허용할 헤더 설정
         config.addAllowedHeader("*");
-
-        // 허용할 HTTP 메서드 설정
         config.addAllowedMethod("*");
 
-        // 모든 경로에 이 설정을 적용합니다.
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -57,29 +53,32 @@ public class SecurityConfig {
                         sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(corsFilter(), SecurityContextPersistenceFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        // A. **가장 중요:** CORS Preflight (OPTIONS) 요청은 모두 허용 (403 해결)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // B. 인증/로그인 및 관리자 API는 인증 없이 허용 (기존 설정 유지)
+                        // 정적 리소스 + 관리자 프론트
                         .requestMatchers(
-                                "/api/v1/auth/signup",
-                                "/api/v1/auth/login",
-                                "/api/admin/**",
-                                "/api/v1/test/notifications/**"
+                                "/",
+                                "/index.html",
+                                "/admin/**"
                         ).permitAll()
 
-                        // C. 그 외 모든 요청은 인증(토큰) 필요
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                        // 백엔드 API 전체 임시 오픈 (시연용)
+                        .requestMatchers(
+                                "/api/**"
+                        ).permitAll()
+
+                        .anyRequest().permitAll()
+                );
+
+        // 🔴 1차 배포 테스트에서는 JWT 필터도 잠시 빼도 됨
+        // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();  // 비밀번호는 반드시 해시
+        return new BCryptPasswordEncoder();
     }
 
     @Bean

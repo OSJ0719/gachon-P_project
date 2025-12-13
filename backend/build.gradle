@@ -41,7 +41,8 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-    implementation('mysql:mysql-connector-java:8.0.32')
+    //implementation('mysql:mysql-connector-java:8.0.32')
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.4.1'
 }
 
 tasks.named('test') {

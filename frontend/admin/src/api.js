@@ -3,7 +3,7 @@ import axios from 'axios';
 // 백엔드 서버 기본 URL
 // - 로컬 개발 시: http://localhost:8080
 // - 배포 시: 실제 서버 주소로 교체
-const ADMIN_BASE_URL = 'http://localhost:8080';
+const ADMIN_BASE_URL = '/';
 
 // axios 인스턴스 생성
 const instance = axios.create({

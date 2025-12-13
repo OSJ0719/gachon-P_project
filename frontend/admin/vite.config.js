@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
+  base:'/admin/',
   server: {
     port: 8081, // package.json의 dev 스크립트와 일치
     proxy: {
