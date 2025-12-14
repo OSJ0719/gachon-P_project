@@ -5,6 +5,7 @@ import AI_Secretary.DTO.AdminDTO.AdminPolicySummaryDto;
 import AI_Secretary.DTO.AdminDTO.AdminPolicyUpdateRequest;
 import AI_Secretary.Exceptions.PolicyNotFoundException;
 import AI_Secretary.domain.policyData.PolicyData;
+import AI_Secretary.domain.subMenus.PolicyChangeReport;
 import AI_Secretary.repository.search.PolicyDataRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -147,6 +148,13 @@ public class AdminPolicyManagementService {
                 p.getEndDate(),
                 p.getLastModifiedAt()
         );
+    }
+    @Transactional
+    public void delete(Long policyId) {
+        PolicyData p = policyDataRepository.findById(policyId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리포트"));
+
+        policyDataRepository.delete(p);
     }
 
     // =========================================================

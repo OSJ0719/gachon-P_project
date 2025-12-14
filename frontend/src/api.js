@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // - 안드로이드 에뮬레이터 사용 시: "http://10.0.2.2:8080"
 // - 실제 스마트폰 사용 시: "http://192.168.x.x:8080" (컴퓨터의 IP주소)
 const BASE_URL = 'http://ceprj.gachon.ac.kr:60019'; 
-
+//const BASE_URL = 'http://10.0.2.2:8080'; 
 /**
  * 공통 API 요청 처리 함수
  */

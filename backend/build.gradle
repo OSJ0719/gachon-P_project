@@ -43,7 +43,7 @@ dependencies {
 
     //implementation('mysql:mysql-connector-java:8.0.32')
     implementation 'org.mariadb.jdbc:mariadb-java-client:3.4.1'
-    //implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
 }
 
 tasks.named('test') {
@@ -51,10 +51,4 @@ tasks.named('test') {
 }
 kotlin {
     jvmToolchain(17)
-}
-configurations.all {
-    // 옛날 springdoc 1.x 아티팩트는 전부 막기
-    exclude group: 'org.springdoc', module: 'springdoc-openapi-ui'
-    exclude group: 'org.springdoc', module: 'springdoc-openapi-webmvc-core'
-    exclude group: 'org.springdoc', module: 'springdoc-openapi-security'
 }

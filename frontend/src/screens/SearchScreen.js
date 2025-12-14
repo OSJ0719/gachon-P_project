@@ -1,9 +1,9 @@
+import { ArrowLeft, ChevronRight, Search } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Search, ChevronRight } from 'lucide-react-native';
-import { COLORS } from '../theme';
 import { getPoliciesAPI } from '../api';
+import { COLORS } from '../theme';
 
 export default function SearchScreen({ navigation }) {
   const [keyword, setKeyword] = useState('');
@@ -67,7 +67,7 @@ export default function SearchScreen({ navigation }) {
             style={styles.input}
             placeholder="검색어를 입력하세요 (예: 난방비)"
             value={keyword}
-            onChangeText={setKeyword}
+            onChange={(e) => setKeyword(e.nativeEvent.text)}
             onSubmitEditing={handleSearch}
             autoFocus
           />

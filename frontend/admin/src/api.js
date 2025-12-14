@@ -4,7 +4,7 @@ import axios from 'axios';
 // - 로컬 개발 시: http://localhost:8080
 // - 배포 시: 실제 서버 주소로 교체
 const ADMIN_BASE_URL = '/';
-
+//const ADMIN_BASE_URL = 'http://localhost:8081'
 // axios 인스턴스 생성
 const instance = axios.create({
   baseURL: ADMIN_BASE_URL,
@@ -95,7 +95,7 @@ export const updatePolicy = (id, data) =>
   });
 
 export const deletePolicy = (policyId) => 
-  request(`/admin/policies/${policyId}`, { method: 'DELETE' });
+  request(`/api/admin/policies/${policyId}`, { method: 'DELETE' });
 
 // ======================================================================
 // 3. 변경 로그 / 변경 내역 레포트

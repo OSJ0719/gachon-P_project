@@ -55,4 +55,11 @@ public class AdminPolicyController {
         var dto = adminPolicyManagementService.updatePolicy(policyId, request);
         return ResponseEntity.ok(dto);
     }
+    @DeleteMapping("/{policyId}")
+    public ResponseEntity<Void> deletePolicy(
+            @PathVariable Long policyId
+    ){
+        adminPolicyManagementService.delete(policyId);
+        return ResponseEntity.ok().build();
+    }
 }
